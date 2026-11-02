@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.development
+.env.production
+*.local
+.DS_Store
+coverage/
+playwright-report/
+test-results/
+dev-dist/
+*.tsbuildinfo
+apps/api/data/
+data/
+secrets/

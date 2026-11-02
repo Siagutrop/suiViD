@@ -1,0 +1,871 @@
+{
+ "exercises": [
+  {
+   "nom": "Crunch poulie haute",
+   "muscle": "Abdos",
+   "videoUrl": "https://youtube.com/shorts/Z3XBFIwyG5w?feature=share"
+  },
+  {
+   "nom": "Montée de jambes",
+   "muscle": "Abdos",
+   "videoUrl": "https://youtube.com/shorts/21f9pxX1RGw?feature=share"
+  },
+  {
+   "nom": "Relevé de jambes",
+   "muscle": "Abdos",
+   "videoUrl": "https://youtube.com/shorts/J5lPyUGd0qo?feature=share"
+  },
+  {
+   "nom": "Matrix - Adducteur",
+   "muscle": "Adducteur",
+   "videoUrl": "https://youtube.com/shorts/tVBiU55p1B4?feature=share"
+  },
+  {
+   "nom": "Technogym - Adducteur",
+   "muscle": "Adducteur",
+   "videoUrl": null
+  },
+  {
+   "nom": "Bayesian Curl",
+   "muscle": "Biceps",
+   "videoUrl": null
+  },
+  {
+   "nom": "Curl haltères",
+   "muscle": "Biceps",
+   "videoUrl": "https://youtube.com/shorts/xAKADSiYSLA?feature=share"
+  },
+  {
+   "nom": "Curl incliné haltères",
+   "muscle": "Biceps",
+   "videoUrl": "https://youtube.com/shorts/Cr6adAJ0VWQ?feature=share"
+  },
+  {
+   "nom": "Curl marteau poulie",
+   "muscle": "Biceps",
+   "videoUrl": "https://youtube.com/shorts/2j2egHK18q0?feature=share"
+  },
+  {
+   "nom": "Matrix - Curl pupitre",
+   "muscle": "Biceps",
+   "videoUrl": "https://youtube.com/shorts/DHsHsV7WaeQ?feature=share"
+  },
+  {
+   "nom": "Kelso shrug",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/ZxPxv-6M2vA?feature=share"
+  },
+  {
+   "nom": "Matrix - Lat pulldown",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/1wvglSVvjlI?feature=share"
+  },
+  {
+   "nom": "Matrix - Rowing assis coude fermé",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/5yyKhvSfqWk?feature=share"
+  },
+  {
+   "nom": "Matrix - Rowing assis coude ouvert",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/cHoj8A335Ww?feature=share"
+  },
+  {
+   "nom": "Matrix - Rowing coude fermé",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/nWliJpv6qBM?feature=share"
+  },
+  {
+   "nom": "Matrix - Rowing coude ouvert",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/i7WXW_A6DOI?feature=share"
+  },
+  {
+   "nom": "Pull over poulie",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/4UYTNsftSlk?feature=share"
+  },
+  {
+   "nom": "Rowing barre",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/slcRltS_VHk?feature=share"
+  },
+  {
+   "nom": "Rowing coude ouvert - buste sur banc",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/4tfWHzWUxME?feature=share"
+  },
+  {
+   "nom": "Rowing un bras haltère",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/dbDog8oUpm0?feature=share"
+  },
+  {
+   "nom": "Technogym - Low Row",
+   "muscle": "Dos",
+   "videoUrl": null
+  },
+  {
+   "nom": "Tirage horizontal prise large",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/DBxo4pDBmR0?feature=share"
+  },
+  {
+   "nom": "Tirage horizontal prise neutre",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/2h_rkE5qGmY?feature=share"
+  },
+  {
+   "nom": "Tirage horizontal uni coude fermé poulie",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/GnNmIYtD21w?feature=share"
+  },
+  {
+   "nom": "Tirage uni 45° coude fermé poulie",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/T3MOEPqCTHs?feature=share"
+  },
+  {
+   "nom": "Tirage vertical prise large",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/b7NOWaUPWcY?feature=share"
+  },
+  {
+   "nom": "Tirage vertical prise neutre",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/eFAlOLfX27g?feature=share"
+  },
+  {
+   "nom": "Tirage vertical uni coude fermé poulie",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/Y8V1kju2ANE?feature=share"
+  },
+  {
+   "nom": "Traction pronation",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/Y_O_z4IQKz4?feature=share"
+  },
+  {
+   "nom": "Traction supination",
+   "muscle": "Dos",
+   "videoUrl": "https://youtube.com/shorts/k-zebl31pi4?feature=share"
+  },
+  {
+   "nom": "Développé militaire haltères",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/Ua-zQ7yKqAc?feature=share"
+  },
+  {
+   "nom": "Développé Militaire Smith Machine",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/FgdaaEOhTZk?feature=share"
+  },
+  {
+   "nom": "Elevation latéral à la poulie",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/Y_FIXJZdCuc?feature=share"
+  },
+  {
+   "nom": "Elevation latéral haltères",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/kC5OJvjPezQ?feature=share"
+  },
+  {
+   "nom": "Elevation latéral Y à la poulie",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/gPr82h45fs4?feature=share"
+  },
+  {
+   "nom": "Gym 80 - Shoulders Press",
+   "muscle": "Epaules",
+   "videoUrl": null
+  },
+  {
+   "nom": "Matrix - Rear delt sur pec fly",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/Lj-sEHAFmPQ?feature=share"
+  },
+  {
+   "nom": "Matrix - Shoulders press",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/eChp_Lrkl90?feature=share"
+  },
+  {
+   "nom": "Oiseau haltères sur banc",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/4_CnoUuwP8I?feature=share"
+  },
+  {
+   "nom": "Oiseau uni à la poulie",
+   "muscle": "Epaules",
+   "videoUrl": "https://youtube.com/shorts/lUKkHmoICB4?feature=share"
+  },
+  {
+   "nom": "Panata - Pec fly - Rear Delt",
+   "muscle": "Epaules",
+   "videoUrl": null
+  },
+  {
+   "nom": "Matrix - Abducteur",
+   "muscle": "Fessiers",
+   "videoUrl": "https://youtube.com/shorts/lJEj_Ed6XK8?feature=share"
+  },
+  {
+   "nom": "Matrix - Hip Thrust",
+   "muscle": "Fessiers",
+   "videoUrl": "https://youtube.com/shorts/14p6QDwpz1A?feature=share"
+  },
+  {
+   "nom": "Technogym - Abducteur",
+   "muscle": "Fessiers",
+   "videoUrl": null
+  },
+  {
+   "nom": "Technogym - Hip Thrust",
+   "muscle": "Fessiers",
+   "videoUrl": null
+  },
+  {
+   "nom": "Matrix - Leg curl allongé",
+   "muscle": "Ischios",
+   "videoUrl": "https://youtube.com/shorts/6t_Z23E19Zk?feature=share"
+  },
+  {
+   "nom": "Matrix - Leg curl assis",
+   "muscle": "Ischios",
+   "videoUrl": "https://youtube.com/shorts/0YisS3LkD-I?feature=share"
+  },
+  {
+   "nom": "Panata - Lying Leg Curl",
+   "muscle": "Ischios",
+   "videoUrl": null
+  },
+  {
+   "nom": "Technogym - Leg Curl Assis - Uni",
+   "muscle": "Ischios",
+   "videoUrl": null
+  },
+  {
+   "nom": "Matrix - extension banc lombaire",
+   "muscle": "Lombaires",
+   "videoUrl": "https://youtube.com/shorts/i3AzFQvKQow?feature=share"
+  },
+  {
+   "nom": "Soulevé de terre - jambes tendues",
+   "muscle": "Lombaires",
+   "videoUrl": "https://youtube.com/shorts/Dxf8TvwRUTA?feature=share"
+  },
+  {
+   "nom": "Technogym - Extension Banc Lombaires",
+   "muscle": "Lombaires",
+   "videoUrl": null
+  },
+  {
+   "nom": "Extension mollet uni sur step",
+   "muscle": "Mollets",
+   "videoUrl": "https://youtube.com/shorts/4a7tEKzsoHU?feature=share"
+  },
+  {
+   "nom": "Matrix - Mollet sur leg press horizontal",
+   "muscle": "Mollets",
+   "videoUrl": "https://youtube.com/shorts/uEPIrdIUoiw?feature=share"
+  },
+  {
+   "nom": "Matrix - mollet assis",
+   "muscle": "Mollets",
+   "videoUrl": "https://youtube.com/shorts/CgR5VQhQFFc?feature=share"
+  },
+  {
+   "nom": "Technogym - Mollet sur leg press horizontal",
+   "muscle": "Mollets",
+   "videoUrl": null
+  },
+  {
+   "nom": "Technogym - Mollet sur leg press horizontal",
+   "muscle": "Mollets",
+   "videoUrl": null
+  },
+  {
+   "nom": "Développé couché barre",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/gqaqCVGtMwE?feature=share"
+  },
+  {
+   "nom": "Développé couché haltères",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/vMHFEm9_YMQ?feature=share"
+  },
+  {
+   "nom": "Développé Couché Smith Machine",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/qdwbexH1OdU?feature=share"
+  },
+  {
+   "nom": "Développé incliné barre",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/MO6iPUgMAO0?feature=share"
+  },
+  {
+   "nom": "Développé incliné haltères",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/_XI9HPcCq9k?feature=share"
+  },
+  {
+   "nom": "Développé Incliné Smith Machine",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/eDqyMMiD5Ls?feature=share"
+  },
+  {
+   "nom": "Dips en libre",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/g8twcfX0kBw?feature=share"
+  },
+  {
+   "nom": "Gym 80 - Chest Press Debout",
+   "muscle": "Pectoraux",
+   "videoUrl": null
+  },
+  {
+   "nom": "Matrix - Chest Press",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/9TD8uTe0XP4?feature=share"
+  },
+  {
+   "nom": "Matrix - Chest press convergent",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/FjB3uSsqvr8?feature=share"
+  },
+  {
+   "nom": "Matrix - Dips",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/fey-JDJirBI?feature=share"
+  },
+  {
+   "nom": "Matrix - Incline Press",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/9eL5CmYpI14?feature=share"
+  },
+  {
+   "nom": "Matrix - Lying chest press",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/FT5ucldY5B0?feature=share"
+  },
+  {
+   "nom": "Matrix - Pec fly",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/zxkzv7Gt99M?feature=share"
+  },
+  {
+   "nom": "Panata - Lying Chest Press",
+   "muscle": "Pectoraux",
+   "videoUrl": null
+  },
+  {
+   "nom": "Panata - Pec Fly",
+   "muscle": "Pectoraux",
+   "videoUrl": null
+  },
+  {
+   "nom": "Pec fly uni - Faisceau claviculaire",
+   "muscle": "Pectoraux",
+   "videoUrl": "https://youtube.com/shorts/3bbGNGj7uuo?feature=share"
+  },
+  {
+   "nom": "Technogym - Développé incliné",
+   "muscle": "Pectoraux",
+   "videoUrl": null
+  },
+  {
+   "nom": "Technogym - Dips",
+   "muscle": "Pectoraux",
+   "videoUrl": null
+  },
+  {
+   "nom": "Fentes Smith Machine",
+   "muscle": "Quadriceps",
+   "videoUrl": "https://youtube.com/shorts/ttS6Fku1tGs?feature=share"
+  },
+  {
+   "nom": "Gym 80 - Pendulum Squat",
+   "muscle": "Quadriceps",
+   "videoUrl": null
+  },
+  {
+   "nom": "Matrix - Hack squat",
+   "muscle": "Quadriceps",
+   "videoUrl": "https://youtube.com/shorts/Jb7XNBq8N7I?is=rXSOAhpMn6A6rFLQ"
+  },
+  {
+   "nom": "Matrix - Leg extension",
+   "muscle": "Quadriceps",
+   "videoUrl": "https://youtube.com/shorts/vq_KY8Xicek?feature=share"
+  },
+  {
+   "nom": "Matrix - Leg press horizontal",
+   "muscle": "Quadriceps",
+   "videoUrl": "https://youtube.com/shorts/Q5EKzVGakFY?feature=share"
+  },
+  {
+   "nom": "Matrix - Press à cuisse incliné",
+   "muscle": "Quadriceps",
+   "videoUrl": "https://youtube.com/shorts/kY4RgW8vWFE?feature=share"
+  },
+  {
+   "nom": "Squat Smith Machine",
+   "muscle": "Quadriceps",
+   "videoUrl": "https://youtube.com/shorts/UOgz19diwZo?feature=share"
+  },
+  {
+   "nom": "Technogym - Leg Extension",
+   "muscle": "Quadriceps",
+   "videoUrl": null
+  },
+  {
+   "nom": "Technogym - Press à cuisse incliné",
+   "muscle": "Quadriceps",
+   "videoUrl": null
+  },
+  {
+   "nom": "Développé Couché  Prise Serrée Smith Machine",
+   "muscle": "Triceps",
+   "videoUrl": "https://youtube.com/shorts/5tgoyZLFKD8?feature=share"
+  },
+  {
+   "nom": "Extension triceps overhead poulie uni",
+   "muscle": "Triceps",
+   "videoUrl": "https://youtube.com/shorts/87HRDufhyqU?feature=share"
+  },
+  {
+   "nom": "Extension triceps poulie",
+   "muscle": "Triceps",
+   "videoUrl": "https://youtube.com/shorts/eFFiB-N6nDk?feature=share"
+  },
+  {
+   "nom": "Extension triceps uni haltère",
+   "muscle": "Triceps",
+   "videoUrl": "https://youtube.com/shorts/BU4gUONtIzs?feature=share"
+  },
+  {
+   "nom": "Extension triceps uni poulie",
+   "muscle": "Triceps",
+   "videoUrl": "https://youtube.com/shorts/zH30g-3fqo4?feature=share"
+  },
+  {
+   "nom": "Pull over triceps",
+   "muscle": "Triceps",
+   "videoUrl": "https://youtube.com/shorts/_eDv-c1IyRE?feature=share"
+  },
+  {
+   "nom": "Extension triceps - Smith machine",
+   "muscle": "Trices",
+   "videoUrl": "https://youtube.com/shorts/wKWixoRsn0o?feature=share"
+  }
+ ],
+ "fullBodyGrid": [
+  [
+   "Full body",
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "💪",
+   "Exercice",
+   null,
+   null,
+   "Série 1",
+   null,
+   "Série 2",
+   null,
+   "Série 3",
+   null
+  ],
+  [
+   null,
+   "Nom de l'exercice",
+   "Vidéo",
+   "Réglage",
+   "Charge\n (kg)",
+   "Rép.\n réalisées",
+   "Charge\n (kg)",
+   "Rép.\n réalisées",
+   "Charge\n (kg)",
+   "Rép.\n réalisées"
+  ],
+  [
+   null,
+   "Développé Couché Smith Machine",
+   "🎬",
+   "Variante Chest press",
+   "X",
+   "X",
+   "X",
+   "X",
+   "X",
+   "X"
+  ],
+  [
+   null,
+   "Tirage vertical prise neutre",
+   "🎬",
+   "Variante PdC ou assistée",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Rowing coude ouvert",
+   "🎬",
+   "Variante rowing coude ouvert",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Curl incliné haltères",
+   "🎬",
+   "Tu enchaînes directement avec le curl marteau debout",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Pull over triceps",
+   "🎬",
+   "Possibilité de switcher avec extension triceps poulie",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Elevation latéral haltères",
+   "🎬",
+   "Possibilité de faire à la poulie",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Leg curl allongé",
+   "🎬",
+   "Leg curl assis si meilleur confort et sensation",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Soulevé de terre - jambes tendues",
+   "🎬",
+   "Possibilité de faire de l'extension au banc à lombaire",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Hack squat",
+   "🎬",
+   "Possibilité de switcher avec une press à cuisse ",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Crunch poulie haute",
+   "🎬",
+   null,
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Mollet sur leg press horizontal",
+   "🎬",
+   "Possibilité de faire directement en unilatéral sur un step",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Full body",
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "💪",
+   "Exercice",
+   null,
+   null,
+   "Série 1",
+   null,
+   "Série 2",
+   null,
+   "Série 3",
+   null
+  ],
+  [
+   null,
+   "Nom de l'exercice",
+   "Vidéo",
+   "Réglage",
+   "Charge\n (kg)",
+   "Rép.\n réalisées",
+   "Charge\n (kg)",
+   "Rép.\n réalisées",
+   "Charge\n (kg)",
+   "Rép.\n réalisées"
+  ],
+  [
+   null,
+   "Développé Couché Smith Machine",
+   "🎬",
+   "Variante Chest press",
+   "X",
+   "X",
+   "X",
+   "X",
+   "X",
+   "X"
+  ],
+  [
+   null,
+   "Tirage vertical prise neutre",
+   "🎬",
+   "Variante PdC ou assistée",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Rowing coude ouvert",
+   "🎬",
+   "Variante rowing coude ouvert",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Curl incliné haltères",
+   "🎬",
+   "Tu enchaînes directement avec le curl marteau debout",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Pull over triceps",
+   "🎬",
+   "Possibilité de switcher avec extension triceps poulie",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Elevation latéral haltères",
+   "🎬",
+   "Possibilité de faire à la poulie",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Leg curl allongé",
+   "🎬",
+   "Leg curl assis si meilleur confort et sensation",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Soulevé de terre - jambes tendues",
+   "🎬",
+   "Possibilité de faire de l'extension au banc à lombaire",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Hack squat",
+   "🎬",
+   "Possibilité de switcher avec une press à cuisse ",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Crunch poulie haute",
+   "🎬",
+   null,
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ],
+  [
+   null,
+   "Matrix - Mollet sur leg press horizontal",
+   "🎬",
+   "Possibilité de faire directement en unilatéral sur un step",
+   "X",
+   "X",
+   "X",
+   "X",
+   null,
+   null
+  ]
+ ],
+ "fullBodyProgram": [
+  {
+   "exercice": "Développé Couché Smith Machine",
+   "variante": "Variante Chest press",
+   "series": 3
+  },
+  {
+   "exercice": "Tirage vertical prise neutre",
+   "variante": "Variante PdC ou assistée",
+   "series": 2
+  },
+  {
+   "exercice": "Matrix - Rowing coude ouvert",
+   "variante": "Variante rowing coude ouvert",
+   "series": 2
+  },
+  {
+   "exercice": "Curl incliné haltères",
+   "variante": "Tu enchaînes directement avec le curl marteau debout",
+   "series": 2
+  },
+  {
+   "exercice": "Pull over triceps",
+   "variante": "Possibilité de switcher avec extension triceps poulie",
+   "series": 2
+  },
+  {
+   "exercice": "Elevation latéral haltères",
+   "variante": "Possibilité de faire à la poulie",
+   "series": 2
+  },
+  {
+   "exercice": "Matrix - Leg curl allongé",
+   "variante": "Leg curl assis si meilleur confort et sensation",
+   "series": 2
+  },
+  {
+   "exercice": "Soulevé de terre - jambes tendues",
+   "variante": "Possibilité de faire de l'extension au banc à lombaire",
+   "series": 2
+  },
+  {
+   "exercice": "Matrix - Hack squat",
+   "variante": "Possibilité de switcher avec une press à cuisse",
+   "series": 2
+  },
+  {
+   "exercice": "Crunch poulie haute",
+   "variante": null,
+   "series": 2
+  },
+  {
+   "exercice": "Matrix - Mollet sur leg press horizontal",
+   "variante": "Possibilité de faire directement en unilatéral sur un step",
+   "series": 2
+  }
+ ]
+}

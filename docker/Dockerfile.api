@@ -1,0 +1,38 @@
+# ---------- Build ----------
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Dépendances (cache par manifests)
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json apps/api/
+COPY packages/shared/package.json packages/shared/
+COPY apps/web/package.json apps/web/
+RUN npm ci --no-audit --no-fund
+
+# Sources nécessaires à l'API
+COPY packages/shared ./packages/shared
+COPY apps/api ./apps/api
+
+# Bundle unique (esbuild) : dist/index.js
+RUN npm run build -w apps/api
+
+# ---------- Runtime ----------
+FROM node:20-alpine AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Uniquement les dépendances de prod de l'API + le bundle
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json apps/api/
+COPY packages/shared/package.json packages/shared/
+RUN npm ci --omit=dev --workspace=apps/api --include-workspace-root=false --no-audit --no-fund \
+  && npm cache clean --force
+
+COPY --from=build /app/apps/api/dist ./apps/api/dist
+
+USER node
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/api/health >/dev/null 2>&1 || exit 1
+
+CMD ["node", "apps/api/dist/index.js"]

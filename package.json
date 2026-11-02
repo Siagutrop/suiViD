@@ -1,0 +1,28 @@
+{
+  "name": "suivi-raphael",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Application de suivi sportif et nutritionnel — Google Sheets comme source de données",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web && npm run build -w apps/api",
+    "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w apps/api && npm run typecheck -w apps/web",
+    "test": "npm run test -w apps/api && npm run test -w apps/web",
+    "test:e2e": "playwright test",
+    "api:setup-sheets": "npm run setup-sheets -w apps/api",
+    "start:api": "node apps/api/dist/index.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
