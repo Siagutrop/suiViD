@@ -146,7 +146,9 @@ export function AccueilPage() {
       {/* Carte calories principale */}
       <motion.div {...appear} transition={{ delay: 0.03 }}>
         <Card className="relative overflow-hidden">
-          <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-accent/10 blur-3xl" />
+          <div className="halo pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-accent/20 blur-3xl" />
+          <div className="halo halo-slow halo-delay pointer-events-none absolute -bottom-12 -left-8 size-40 rounded-full bg-violet/15 blur-3xl" />
+          <div className="halo pointer-events-none absolute left-4 top-1/2 size-28 -translate-y-1/2 rounded-full bg-accent/15 blur-2xl" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Flame className="size-4 text-accent" /> Calories du jour
@@ -189,7 +191,8 @@ export function AccueilPage() {
 
       {/* Macros */}
       <motion.div {...appear} transition={{ delay: 0.06 }}>
-        <Card>
+        <Card className="relative overflow-hidden">
+          <div className="halo halo-slow pointer-events-none absolute -bottom-8 -right-10 size-36 rounded-full bg-violet/15 blur-3xl" />
           <CardHeader>
             <CardTitle>Macronutriments</CardTitle>
           </CardHeader>
@@ -220,7 +223,8 @@ export function AccueilPage() {
 
       {/* Récompenses */}
       <motion.div {...appear} transition={{ delay: 0.11 }}>
-        <Card>
+        <Card className="relative overflow-hidden">
+          <div className="halo halo-delay pointer-events-none absolute -left-10 -top-8 size-36 rounded-full bg-warn/15 blur-3xl" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="size-4 text-warn" /> Récompenses
@@ -241,7 +245,8 @@ export function AccueilPage() {
 
       {/* Prochaine séance */}
       <motion.div {...appear} transition={{ delay: 0.12 }}>
-        <Card>
+        <Card className="relative overflow-hidden">
+          <div className="halo pointer-events-none absolute -bottom-10 -right-8 size-40 rounded-full bg-accent/15 blur-3xl" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Dumbbell className="size-4 text-violet" /> Sport
@@ -257,7 +262,7 @@ export function AccueilPage() {
                     {lastSeance && ` · dernière séance le ${formatShort(lastSeance.date)}`}
                   </p>
                 </div>
-                <Button asChild size="lg">
+                <Button asChild size="lg" className="glow-breathe">
                   <Link to="/seance-active">
                     <Play className="size-5" fill="currentColor" />
                     Commencer
@@ -282,8 +287,8 @@ export function AccueilPage() {
 
       {/* Tendances */}
       <motion.div {...appear} transition={{ delay: 0.15 }} className="grid gap-3 lg:grid-cols-2">
-        <TrendCard title="Poids — 7 jours" unit="kg" data={weightSeries} color="var(--accent)" />
-        <TrendCard title="Calories — 7 jours" unit="kcal" data={calSeries} color="var(--violet)" />
+        <TrendCard title="Poids — 7 jours" unit="kg" data={weightSeries} color="var(--accent)" haloPos="-right-8 -top-8" />
+        <TrendCard title="Calories — 7 jours" unit="kcal" data={calSeries} color="var(--violet)" haloPos="-left-8 -bottom-8" />
       </motion.div>
     </div>
   );
@@ -307,6 +312,7 @@ function BadgeChip({ badge, nouveau, index }: { badge: Badge; nouveau: boolean; 
           animate={{ scale: 1 }}
           transition={{ delay: 0.6 + index * 0.04, type: 'spring', stiffness: 400, damping: 15 }}
           className="absolute -right-1.5 -top-1.5 rounded-full bg-warn px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-bg"
+          style={{ boxShadow: '0 0 10px 2px color-mix(in srgb, var(--warn) 55%, transparent)' }}
         >
           Nouveau
         </motion.span>
@@ -349,10 +355,14 @@ function StatCard({ icon, label, value, goal }: { icon: React.ReactNode; label: 
   );
 }
 
-function TrendCard({ title, unit, data, color }: { title: string; unit: string; data: { date: string; value: number | null }[]; color: string }) {
+function TrendCard({ title, unit, data, color, haloPos = '-right-8 -top-8' }: { title: string; unit: string; data: { date: string; value: number | null }[]; color: string; haloPos?: string }) {
   const hasData = data.some((d) => d.value !== null);
   return (
-    <Card className="p-4">
+    <Card className="relative overflow-hidden p-4">
+      <div
+        className={cn('halo halo-slow pointer-events-none absolute size-28 rounded-full blur-3xl', haloPos)}
+        style={{ background: `color-mix(in srgb, ${color} 40%, transparent)` }}
+      />
       <p className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-2">{title}</p>
       {hasData ? (
         <ResponsiveContainer width="100%" height={80}>

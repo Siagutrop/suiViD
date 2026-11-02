@@ -10,6 +10,7 @@ import type {
   SessionExercise,
   TodayResponse,
   UserSettings,
+  Photo,
 } from '@suivi/shared';
 import { addDays, todayInTimezone } from '@suivi/shared';
 import { api } from '@/lib/api';
@@ -30,6 +31,7 @@ export const keys = {
   seance: (id: string) => ['seances', id] as const,
   lastPerf: ['seances', 'last-perf'] as const,
   parametres: ['parametres'] as const,
+  photos: ['photos'] as const,
 };
 
 export function useMeta() {
@@ -153,5 +155,28 @@ export function useSaveParametres() {
   return useMutation({
     mutationFn: (s: UserSettings) => api.put<UserSettings>('/parametres', s),
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.parametres }),
+  });
+}
+
+// ---------- Photos de progression ----------
+
+export function usePhotos() {
+  return useQuery({ queryKey: keys.photos, queryFn: () => api.get<Photo[]>('/photos'), staleTime: 30_000 });
+}
+
+export function useUploadPhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (p: { angle: string; pose?: string; date: string; image: string }) =>
+      api.post<Photo>('/photos', p),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.photos }),
+  });
+}
+
+export function useDeletePhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ ok: boolean }>(`/photos/${id}`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.photos }),
   });
 }

@@ -49,7 +49,7 @@ export function ExercicesPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-thin">
+        <div className="mt-3 flex flex-wrap gap-2">
           {muscles.map((m) => (
             <button
               key={m}

@@ -8,19 +8,31 @@
 :root,
 [data-theme='sombre'] {
   --bg: #090b10;
+  --bg-rgb: 9 11 16;
   --bg-2: #11151d;
+  --bg-2-rgb: 17 21 29;
   --card: #171c26;
+  --card-rgb: 23 28 38;
   --line: #252b37;
+  --line-rgb: 37 43 55;
   --ink: #f4f6fa;
+  --ink-rgb: 244 246 250;
   --ink-2: #9099aa;
+  --ink-2-rgb: 144 153 170;
   --accent: #b8f34b;
+  --accent-rgb: 184 243 75;
   --on-accent: #0c0f05;
+  --on-accent-rgb: 12 15 5;
   --accent-soft: rgba(184, 243, 75, 0.12);
   --violet: #8b7cf6;
+  --violet-rgb: 139 124 246;
   --violet-soft: rgba(139, 124, 246, 0.14);
   --success: #35c98b;
+  --success-rgb: 53 201 139;
   --warn: #f3ad56;
+  --warn-rgb: 243 173 86;
   --danger: #f35b66;
+  --danger-rgb: 243 91 102;
   --glow-1: rgba(184, 243, 75, 0.05);
   --glow-2: rgba(139, 124, 246, 0.05);
   --selection: rgba(184, 243, 75, 0.25);
@@ -29,19 +41,31 @@
 /* Bordeaux — fond sombre chaud, accent vin, secondaire doré. */
 [data-theme='bordeaux'] {
   --bg: #100c10;
+  --bg-rgb: 16 12 16;
   --bg-2: #181218;
+  --bg-2-rgb: 24 18 24;
   --card: #1d161f;
+  --card-rgb: 29 22 31;
   --line: #32242f;
+  --line-rgb: 50 36 47;
   --ink: #f8f3f5;
+  --ink-rgb: 248 243 245;
   --ink-2: #a3909c;
+  --ink-2-rgb: 163 144 156;
   --accent: #e14d6e;
+  --accent-rgb: 225 77 110;
   --on-accent: #fff3f5;
+  --on-accent-rgb: 255 243 245;
   --accent-soft: rgba(225, 77, 110, 0.14);
   --violet: #d9a44a;
+  --violet-rgb: 217 164 74;
   --violet-soft: rgba(217, 164, 74, 0.14);
   --success: #43b98a;
+  --success-rgb: 67 185 138;
   --warn: #e8a24b;
+  --warn-rgb: 232 162 75;
   --danger: #ef5c64;
+  --danger-rgb: 239 92 100;
   --glow-1: rgba(225, 77, 110, 0.06);
   --glow-2: rgba(217, 164, 74, 0.05);
   --selection: rgba(225, 77, 110, 0.28);
@@ -50,19 +74,31 @@
 /* Clair — studio lumineux, vert citron foncé. */
 [data-theme='clair'] {
   --bg: #f2f4f8;
+  --bg-rgb: 242 244 248;
   --bg-2: #e8ecf2;
+  --bg-2-rgb: 232 236 242;
   --card: #ffffff;
+  --card-rgb: 255 255 255;
   --line: #dde4ec;
+  --line-rgb: 221 228 236;
   --ink: #171c26;
+  --ink-rgb: 23 28 38;
   --ink-2: #5b6674;
+  --ink-2-rgb: 91 102 116;
   --accent: #4e9b0e;
+  --accent-rgb: 78 155 14;
   --on-accent: #ffffff;
+  --on-accent-rgb: 255 255 255;
   --accent-soft: rgba(78, 155, 14, 0.12);
   --violet: #7c6ce8;
+  --violet-rgb: 124 108 232;
   --violet-soft: rgba(124, 108, 232, 0.12);
   --success: #18a06b;
+  --success-rgb: 24 160 107;
   --warn: #d9820b;
+  --warn-rgb: 217 130 11;
   --danger: #d9303e;
+  --danger-rgb: 217 48 62;
   --glow-1: rgba(78, 155, 14, 0.05);
   --glow-2: rgba(124, 108, 232, 0.05);
   --selection: rgba(78, 155, 14, 0.22);
@@ -71,19 +107,31 @@
 /* Sable — papier chaud, bordeaux profond, secondaire ambre. */
 [data-theme='sable'] {
   --bg: #f6f1e8;
+  --bg-rgb: 246 241 232;
   --bg-2: #ede6d8;
+  --bg-2-rgb: 237 230 216;
   --card: #fdfbf6;
+  --card-rgb: 253 251 246;
   --line: #e2d7c2;
+  --line-rgb: 226 215 194;
   --ink: #241d14;
+  --ink-rgb: 36 29 20;
   --ink-2: #7d7260;
+  --ink-2-rgb: 125 114 96;
   --accent: #a3163f;
+  --accent-rgb: 163 22 63;
   --on-accent: #ffffff;
+  --on-accent-rgb: 255 255 255;
   --accent-soft: rgba(163, 22, 63, 0.1);
   --violet: #b07e10;
+  --violet-rgb: 176 126 16;
   --violet-soft: rgba(176, 126, 16, 0.12);
   --success: #2e8f62;
+  --success-rgb: 46 143 98;
   --warn: #b97214;
+  --warn-rgb: 185 114 20;
   --danger: #c22b33;
+  --danger-rgb: 194 43 51;
   --glow-1: rgba(163, 22, 63, 0.05);
   --glow-2: rgba(176, 126, 16, 0.05);
   --selection: rgba(163, 22, 63, 0.18);
@@ -154,4 +202,40 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Halos lumineux « vivants » — pulsation lente (respiration).         */
+/* ------------------------------------------------------------------ */
+
+@keyframes halo-breathe {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent), 0 0 12px 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+  50% { box-shadow: 0 0 0 6px transparent, 0 0 24px 4px color-mix(in srgb, var(--accent) 55%, transparent); }
+}
+
+@layer utilities {
+  /* Nappe de lumière floutée qui respire (à positionner en absolu). */
+  .halo {
+    animation: halo-breathe 5s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+  .halo-slow {
+    animation-duration: 8s;
+  }
+  .halo-delay {
+    animation-delay: -2.5s; /* déphasé pour ne pas pulser en même temps */
+  }
+  /* Lueur respirante autour d'un élément (CTA, badge nouveau…). */
+  .glow-breathe {
+    animation: glow-pulse 3.2s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo, .halo-slow, .halo-delay, .glow-breathe { animation: none; }
 }

@@ -134,3 +134,13 @@ export interface ApiError {
   code: string;
   details?: unknown;
 }
+
+/** Photo de progression (fichier sur le serveur, métadonnées ici). */
+export interface Photo {
+  id: string;
+  angle: string; // 'face' | 'profil' | 'profil-droit' | 'profil-gauche' | 'dos'
+  pose?: 'relache' | 'contracte'; // absent sur les anciennes photos
+  date: string; // ISO YYYY-MM-DD
+  ext: 'jpg' | 'png' | 'webp';
+  createdAt: string;
+}

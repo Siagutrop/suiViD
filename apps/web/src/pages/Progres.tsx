@@ -28,6 +28,7 @@ import { useExercices, useJournalRange, useParametres, useSeances } from '@/hook
 import { formatKg, formatNum, formatShort } from '@/lib/utils';
 import { getBuild } from '@/lib/body';
 import { BodyMap } from '@/components/BodyMap';
+import { PhotosTab } from '@/components/PhotosTab';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -93,11 +94,12 @@ export function ProgresPage() {
         }
       />
       <Tabs defaultValue="poids">
-        <TabsList className="mb-5 w-full justify-start overflow-x-auto scrollbar-thin">
+        <TabsList className="mb-5 flex w-full flex-wrap justify-start">
           <TabsTrigger value="poids">Poids</TabsTrigger>
           <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
           <TabsTrigger value="activite">Activité</TabsTrigger>
           <TabsTrigger value="muscu">Musculation</TabsTrigger>
+          <TabsTrigger value="photos">Photos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="poids">
@@ -111,6 +113,9 @@ export function ProgresPage() {
         </TabsContent>
         <TabsContent value="muscu">
           <MuscuTab seances={seancesPeriode} exercices={exercices ?? []} />
+        </TabsContent>
+        <TabsContent value="photos">
+          <PhotosTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -311,7 +316,9 @@ function MuscuTab({ seances, exercices }: { seances: import('@suivi/shared').Ses
   }
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="relative overflow-hidden">
+        <div className="halo halo-slow pointer-events-none absolute -left-12 top-1/3 size-48 rounded-full bg-accent/30 blur-3xl" />
+        <div className="halo halo-delay pointer-events-none absolute -right-10 top-1/4 size-40 rounded-full bg-violet/25 blur-3xl" />
         <CardHeader><CardTitle>Muscles les plus sollicités</CardTitle></CardHeader>
         <CardContent>
           <BodyMap intensities={muscleIntensity} build={getBuild()} height={230} labels />

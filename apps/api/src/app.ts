@@ -1,5 +1,8 @@
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
+import { createReadStream } from 'node:fs';
+import { dirname } from 'node:path';
+import { z } from 'zod';
 import {
   finishSessionSchema,
   journalValuesSchema,
@@ -35,6 +38,8 @@ import { ProgramRepository } from './repositories/ProgramRepository.js';
 import { SessionRepository } from './repositories/SessionRepository.js';
 import { SettingsRepository } from './repositories/SettingsRepository.js';
 import { reportSessionToFullBody } from './repositories/FullBodyReporter.js';
+import { PhotoStore } from './photos.js';
+import { defaultUsersFile } from './users/store.js';
 
 // ------------------------------------------------------------------
 // Multi-utilisateur : chaque requête est résolue vers le contexte de
@@ -273,6 +278,40 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     const { provider } = await u(req);
     const result = await provisionSpreadsheet(provider);
     return { linked: true, ...result };
+  });
+
+  // ---------- Photos de progression (fichiers sur disque, pas dans Sheets) ----------
+  const photoStore = new PhotoStore(
+    dirname(ctx.env.USERS_FILE ?? defaultUsersFile()) + '/photos',
+  );
+  const photoUploadSchema = z.object({
+    angle: z.enum(['face', 'profil', 'profil-droit', 'profil-gauche', 'dos']),
+    pose: z.enum(['relache', 'contracte']).optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    image: z.string().startsWith('data:image/'),
+  });
+
+  app.get('/api/photos', async (req) => photoStore.list(req.userId!));
+
+  app.post('/api/photos', { bodyLimit: 30 * 1024 * 1024 }, async (req) => {
+    const { angle, pose, date, image } = parse(photoUploadSchema, req.body);
+    return photoStore.add(req.userId!, angle, image, date, pose);
+  });
+
+  app.get('/api/photos/:id/file', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { filePath, ext } = await photoStore.file(req.userId!, id);
+    const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    return reply
+      .type(mime)
+      .header('Cache-Control', 'private, max-age=3600')
+      .send(createReadStream(filePath));
+  });
+
+  app.delete('/api/photos/:id', async (req) => {
+    const { id } = req.params as { id: string };
+    await photoStore.remove(req.userId!, id);
+    return { ok: true };
   });
 
   // ---------- Journal ----------

@@ -9,16 +9,18 @@ export default {
     extend: {
       colors: {
         // Variables CSS — permutées par [data-theme] dans index.css.
-        bg: { DEFAULT: 'var(--bg)', 2: 'var(--bg-2)' },
-        card: 'var(--card)',
-        line: 'var(--line)',
-        ink: { DEFAULT: 'var(--ink)', 2: 'var(--ink-2)' },
-        'on-accent': 'var(--on-accent)',
-        accent: { DEFAULT: 'var(--accent)', soft: 'var(--accent-soft)' },
-        violet: { DEFAULT: 'var(--violet)', soft: 'var(--violet-soft)' },
-        success: 'var(--success)',
-        warn: 'var(--warn)',
-        danger: 'var(--danger)',
+        // Canaux RGB (var --x-rgb) pour que les modificateurs /opacité fonctionnent.
+        // Les usages directs en CSS inline utilisent var(--x) (hex).
+        bg: { DEFAULT: 'rgb(var(--bg-rgb) / <alpha-value>)', 2: 'rgb(var(--bg-2-rgb) / <alpha-value>)' },
+        card: 'rgb(var(--card-rgb) / <alpha-value>)',
+        line: 'rgb(var(--line-rgb) / <alpha-value>)',
+        ink: { DEFAULT: 'rgb(var(--ink-rgb) / <alpha-value>)', 2: 'rgb(var(--ink-2-rgb) / <alpha-value>)' },
+        'on-accent': 'rgb(var(--on-accent-rgb) / <alpha-value>)',
+        accent: { DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)', soft: 'var(--accent-soft)' },
+        violet: { DEFAULT: 'rgb(var(--violet-rgb) / <alpha-value>)', soft: 'var(--violet-soft)' },
+        success: 'rgb(var(--success-rgb) / <alpha-value>)',
+        warn: 'rgb(var(--warn-rgb) / <alpha-value>)',
+        danger: 'rgb(var(--danger-rgb) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['"Manrope Variable"', 'Manrope', 'Inter', 'system-ui', 'sans-serif'],

@@ -283,13 +283,13 @@ function SessionRunner({
           </Badge>
         </div>
         {/* Progression exercices */}
-        <div className="flex gap-1 overflow-x-auto px-4 pb-2.5 scrollbar-thin">
+        <div className="flex gap-1 px-4 pb-2.5">
           {draft.exercices.map((e, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
               className={cn(
-                'h-1.5 min-w-8 flex-1 rounded-full transition-colors',
+                'h-1.5 min-w-3 flex-1 rounded-full transition-colors',
                 i === idx
                   ? 'bg-accent'
                   : e.passee
