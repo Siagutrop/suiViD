@@ -58,6 +58,16 @@ export class SettingsRepository {
       return Number.isFinite(n) ? n : null;
     };
     const d = DEFAULT_SETTINGS;
+    const txt = (k: string): string | null => {
+      const v = map.get(k);
+      return v == null || v === '' ? null : v;
+    };
+    const jours = (map.get('joursSeance') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s !== '')
+      .map(Number)
+      .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
     return {
       objectifPoids: num('objectifPoids'),
       objectifCalories: num('objectifCalories'),
@@ -69,6 +79,11 @@ export class SettingsRepository {
       reposDefautSec: num('reposDefautSec') ?? d.reposDefautSec,
       unite: 'kg',
       timezone: map.get('timezone') ?? d.timezone ?? DEFAULT_TIMEZONE,
+      nomAffiche: txt('nomAffiche'),
+      tailleCm: num('tailleCm'),
+      dateNaissance: txt('dateNaissance'),
+      noteCoach: txt('noteCoach'),
+      joursSeance: [...new Set(jours)].sort(),
     };
   }
 

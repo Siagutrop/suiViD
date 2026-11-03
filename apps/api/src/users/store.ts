@@ -17,6 +17,10 @@ export interface UserRecord {
   /** scrypt$N$r$p$saltHex$hashHex */
   passwordHash: string;
   spreadsheetId: string | null;
+  /** 'user' (client) ou 'coach' (admin). Défaut 'user' pour les anciens comptes. */
+  role: 'user' | 'coach';
+  /** Compte désactivé par le coach — connexion et jetons refusés. */
+  disabled?: boolean;
   createdAt: string;
 }
 
@@ -83,7 +87,7 @@ export class UserStore {
     if (!existsSync(this.file)) return;
     try {
       const data = JSON.parse(readFileSync(this.file, 'utf-8')) as UsersFile;
-      for (const u of data.users ?? []) this.users.set(u.id, u);
+      for (const u of data.users ?? []) this.users.set(u.id, { ...u, role: u.role ?? 'user' });
     } catch {
       // Fichier corrompu : on repart vide plutôt que de crasher.
     }
@@ -116,7 +120,7 @@ export class UserStore {
     return undefined;
   }
 
-  create(email: string, password: string): UserRecord {
+  create(email: string, password: string, role: 'user' | 'coach' = 'user'): UserRecord {
     const e = email.trim().toLowerCase();
     if (this.byEmail(e)) {
       throw new AppError(409, ERR.VALIDATION, 'Un compte existe déjà avec cet e-mail');
@@ -126,10 +130,27 @@ export class UserStore {
       email: e,
       passwordHash: hashPassword(password),
       spreadsheetId: null,
+      role,
       createdAt: new Date().toISOString(),
     };
     this.users.set(user.id, user);
     return user;
+  }
+
+  async update(id: string, patch: { disabled?: boolean; role?: 'user' | 'coach' }): Promise<UserRecord> {
+    const u = this.users.get(id);
+    if (!u) throw new AppError(404, ERR.NOT_FOUND, 'Utilisateur introuvable');
+    if (patch.disabled !== undefined) u.disabled = patch.disabled;
+    if (patch.role !== undefined) u.role = patch.role;
+    await this.save();
+    return u;
+  }
+
+  async setPassword(id: string, password: string): Promise<void> {
+    const u = this.users.get(id);
+    if (!u) throw new AppError(404, ERR.NOT_FOUND, 'Utilisateur introuvable');
+    u.passwordHash = hashPassword(password);
+    await this.save();
   }
 
   async setSpreadsheet(userId: string, spreadsheetId: string): Promise<UserRecord> {

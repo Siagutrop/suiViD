@@ -199,6 +199,53 @@ export class DailyTrackingRepository {
     }
     return { entry: merged, written };
   }
+
+  /**
+   * Écriture administrateur (coach) : édite la ligne d'une date quelconque
+   * — pas de détection de conflit, pas de restriction « jour courant ».
+   * Si aucune ligne n'existe pour la date, elle est créée en fin de table
+   * (colonne B « semaine » laissée vide).
+   */
+  async upsertEntry(
+    date: string,
+    values: Partial<JournalValues>,
+  ): Promise<JournalEntry> {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new AppError(400, ERR.VALIDATION, 'Date invalide (YYYY-MM-DD)');
+    }
+    const table = await this.readTable();
+    const found = table.find((r) => r.entry.date === date);
+
+    if (!found) {
+      const row: (string | number | null)[] = [
+        date,
+        null,
+        ...JOURNAL_FIELDS.map((k) => {
+          const v = values[k];
+          return v === undefined || v === null ? EMPTY_PLACEHOLDER : v;
+        }),
+      ];
+      await this.provider.appendRows(SHEET_SUIVI, [row]);
+    } else {
+      const updates: { range: string; values: (string | number)[][] }[] = [];
+      JOURNAL_FIELDS.forEach((key, i) => {
+        const next = values[key];
+        if (next === undefined) return;
+        if (sameValue(next, found.entry[key])) return;
+        const col = JOURNAL_WRITABLE_FIRST_COL + i;
+        updates.push({
+          range: `${indexToCol(col)}${found.rowIndex}`,
+          values: [[next === null ? EMPTY_PLACEHOLDER : next]],
+        });
+      });
+      if (updates.length) await this.provider.batchUpdate(SHEET_SUIVI, updates);
+    }
+
+    const table2 = await this.readTable();
+    const entry = table2.find((r) => r.entry.date === date)?.entry;
+    if (!entry) throw new AppError(500, ERR.NOT_FOUND, 'Écriture journal non relue');
+    return entry;
+  }
 }
 
 function pick(v: JournalValues): JournalValues {

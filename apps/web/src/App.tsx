@@ -8,6 +8,7 @@ import { LoginPage } from '@/pages/Login';
 import { SetupPage } from '@/pages/Setup';
 import { AccueilPage } from '@/pages/Accueil';
 import { JournalPage } from '@/pages/Journal';
+import { NutritionPage } from '@/pages/Nutrition';
 import { SeancesPage } from '@/pages/Seances';
 import { ProgrammePage } from '@/pages/Programme';
 import { SeanceActivePage } from '@/pages/SeanceActive';
@@ -15,6 +16,12 @@ import { SeanceDetailPage } from '@/pages/SeanceDetail';
 import { ExercicesPage } from '@/pages/Exercices';
 import { ProgresPage } from '@/pages/Progres';
 import { ParametresPage } from '@/pages/Parametres';
+import { AdminDashboardPage } from '@/pages/admin/AdminDashboard';
+import { AdminClientsPage } from '@/pages/admin/AdminClients';
+import { AdminClientPage } from '@/pages/admin/AdminClient';
+import { AdminProgrammePage } from '@/pages/admin/AdminProgramme';
+import { AdminExercicesPage } from '@/pages/admin/AdminExercices';
+import { AdminAlimentsPage } from '@/pages/admin/AdminAliments';
 
 /** Splash pendant la récupération du profil. */
 function Splash() {
@@ -48,12 +55,24 @@ function AuthedApp() {
       <Route element={<AppShell />}>
         <Route index element={<AccueilPage />} />
         <Route path="/journal" element={<JournalPage />} />
+        <Route path="/nutrition" element={<NutritionPage />} />
         <Route path="/seances" element={<SeancesPage />} />
         <Route path="/seances/:id" element={<SeanceDetailPage />} />
         <Route path="/programmes/:id" element={<ProgrammePage />} />
         <Route path="/exercices" element={<ExercicesPage />} />
         <Route path="/progres" element={<ProgresPage />} />
         <Route path="/parametres" element={<ParametresPage />} />
+        {/* Espace coach — visible uniquement pour le rôle 'coach' */}
+        {me?.role === 'coach' && (
+          <>
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/clients" element={<AdminClientsPage />} />
+            <Route path="/admin/clients/:id" element={<AdminClientPage />} />
+            <Route path="/admin/clients/:id/programmes/:progId" element={<AdminProgrammePage />} />
+            <Route path="/admin/exercices" element={<AdminExercicesPage />} />
+            <Route path="/admin/aliments" element={<AdminAlimentsPage />} />
+          </>
+        )}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -10,6 +10,8 @@ import { useToday, useUpdateToday, useJournalRange } from '@/hooks/queries';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { JournalChamps } from '@/components/JournalChamps';
+import { JournalCommentaires } from '@/components/JournalCommentaires';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/misc';
@@ -194,6 +196,12 @@ export function JournalPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Mesures personnalisées définies par le coach */}
+      {today && <JournalChamps date={today.entry.date} />}
+
+      {/* Échanges avec le coach sur la journée */}
+      {today && <JournalCommentaires date={today.entry.date} />}
 
       {/* Historique récent — lecture seule */}
       <Card className="mt-5">

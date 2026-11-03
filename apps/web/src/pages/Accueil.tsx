@@ -12,6 +12,7 @@ import {
   Footprints,
   Lock,
   Medal,
+  MessageSquareText,
   NotebookPen,
   Play,
   Settings,
@@ -35,6 +36,7 @@ import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { loadDraft } from '@/lib/draft';
 import { cn } from '@/lib/utils';
 
+const JOURS_COURT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const appear = {
   initial: { opacity: 0, y: 14 },
   animate: { opacity: 1, y: 0 },
@@ -89,6 +91,16 @@ export function AccueilPage() {
   const actif = programmes?.find((p) => p.statut === 'actif');
   const lastSeance = seances?.[0];
 
+  // Rappels du jour : journal vide + séance planifiée non faite.
+  const jourSemaine = new Date(`${todayKey}T12:00:00`).getDay();
+  const journalVide =
+    !isLoading &&
+    entry != null &&
+    [entry.sommeil, entry.forme, entry.poids, entry.calories, entry.pas].every((v) => v == null);
+  const seancePrevue =
+    (settings?.joursSeance ?? []).includes(jourSemaine) &&
+    !(seances ?? []).some((s) => s.date === todayKey && s.statut === 'terminee');
+
   const weightSeries = journal ? seriesByDay(journal, 'poids', 7, todayKey) : [];
   const calSeries = journal ? seriesByDay(journal, 'calories', 7, todayKey) : [];
   const lastWeight = [...weightSeries].reverse().find((p) => p.value !== null)?.value ?? null;
@@ -100,7 +112,7 @@ export function AccueilPage() {
       {/* En-tête */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">{greeting()} Raphaël</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">{greeting()} {settings?.nomAffiche ?? 'Raphaël'}</h1>
           <p className="mt-0.5 text-sm capitalize text-ink-2">{formatDateFr(todayKey)}</p>
         </div>
         <Button asChild variant="ghost" size="icon" aria-label="Paramètres">
@@ -123,6 +135,41 @@ export function AccueilPage() {
           <span className="font-semibold text-ink">{phrase}</span>
         </p>
       </motion.div>
+
+      {/* Message du coach */}
+      {settings?.noteCoach && (
+        <motion.div {...appear} transition={{ delay: 0.02 }}>
+          <div className="relative overflow-hidden rounded-2xl border border-violet/40 bg-violet/10 px-4 py-3">
+            <div className="halo pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-violet/25 blur-2xl" />
+            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-violet">
+              <MessageSquareText className="size-3.5" /> Note du coach
+            </p>
+            <p className="mt-1.5 whitespace-pre-line text-[13px] leading-snug">{settings.noteCoach}</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Rappels du jour — journal à remplir, séance planifiée */}
+      {(journalVide || seancePrevue) && (
+        <motion.div {...appear} className="flex flex-wrap gap-2">
+          {journalVide && (
+            <Link
+              to="/journal"
+              className="flex items-center gap-2 rounded-full border border-warn/40 bg-warn/10 px-3.5 py-1.5 text-xs font-bold text-warn transition-colors hover:bg-warn/20"
+            >
+              <NotebookPen className="size-3.5" /> Journal du jour à remplir
+            </Link>
+          )}
+          {seancePrevue && (
+            <Link
+              to="/seances"
+              className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3.5 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-accent/20"
+            >
+              <Dumbbell className="size-3.5" /> Séance prévue aujourd'hui
+            </Link>
+          )}
+        </motion.div>
+      )}
 
       {/* Reprise de brouillon de séance */}
       {draft && (
@@ -261,6 +308,21 @@ export function AccueilPage() {
                     {actif.exercices.length} exercices
                     {lastSeance && ` · dernière séance le ${formatShort(lastSeance.date)}`}
                   </p>
+                  {(settings?.joursSeance?.length ?? 0) > 0 && (
+                    <p className="mt-1.5 flex flex-wrap gap-1">
+                      {settings!.joursSeance.map((j) => (
+                        <span
+                          key={j}
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-[10px] font-bold',
+                            j === new Date().getDay() ? 'bg-accent/25 text-accent' : 'bg-bg-2 text-ink-2',
+                          )}
+                        >
+                          {JOURS_COURT[j]}
+                        </span>
+                      ))}
+                    </p>
+                  )}
                 </div>
                 <Button asChild size="lg" className="glow-breathe">
                   <Link to="/seance-active">

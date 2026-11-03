@@ -6,22 +6,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import {
-  Camera,
-  CameraOff,
-  ChevronLeft,
-  ChevronRight,
-  ImagePlus,
-  Loader2,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Camera, CameraOff, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Photo } from '@suivi/shared';
 import { todayInTimezone } from '@suivi/shared';
 import { useDeletePhoto, usePhotos, useUploadPhoto } from '@/hooks/queries';
 import { getToken } from '@/lib/api';
 import { cn, formatDateFr } from '@/lib/utils';
+import { PhotoCompareDialog } from '@/components/PhotoCompareDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -51,29 +43,30 @@ const GROUP_ORDER = ['face', 'profil-droit', 'profil-gauche', 'dos', 'profil'].f
 // ---------- Chargement des fichiers (auth Bearer → objectURL) ----------
 const urlCache = new Map<string, Promise<string>>();
 
-function photoUrl(id: string): Promise<string> {
-  let p = urlCache.get(id);
+function photoUrl(id: string, base = '/api/photos'): Promise<string> {
+  const key = `${base}/${id}`;
+  let p = urlCache.get(key);
   if (!p) {
-    p = fetch(`/api/photos/${id}/file`, {
+    p = fetch(`${base}/${id}/file`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     })
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('photo'))))
       .then((b) => URL.createObjectURL(b));
-    urlCache.set(id, p);
-    p.catch(() => urlCache.delete(id));
+    urlCache.set(key, p);
+    p.catch(() => urlCache.delete(key));
   }
   return p;
 }
 
-function PhotoImg({ id, className, alt, style }: { id: string; className?: string; alt: string; style?: React.CSSProperties }) {
+export function PhotoImg({ id, base, className, alt, style }: { id: string; base?: string; className?: string; alt: string; style?: React.CSSProperties }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let on = true;
-    void photoUrl(id).then((u) => on && setSrc(u)).catch(() => undefined);
+    void photoUrl(id, base).then((u) => on && setSrc(u)).catch(() => undefined);
     return () => {
       on = false;
     };
-  }, [id]);
+  }, [id, base]);
   if (!src) return <div className={cn('animate-pulse bg-line/40', className)} style={style} />;
   return <img src={src} alt={alt} className={className} style={style} draggable={false} />;
 }
@@ -112,6 +105,12 @@ export function PhotosTab() {
     return m;
   }, [photos]);
 
+  // Bilan périodique : dernière photo de plus de 28 j → rappel en évidence.
+  const today = todayInTimezone();
+  const joursDepuis = photos?.[0]?.date
+    ? Math.round((Date.parse(today) - Date.parse(photos[0].date)) / 86_400_000)
+    : null;
+
   const pick = (p: Photo) => {
     if (!selecting) {
       setSelecting(p);
@@ -129,6 +128,25 @@ export function PhotosTab() {
 
   return (
     <div className="space-y-4">
+      {joursDepuis != null && joursDepuis >= 28 && (
+        <Card className="relative overflow-hidden border-accent/40">
+          <div className="halo halo-slow pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-accent/20 blur-3xl" />
+          <CardContent className="flex items-center gap-4 py-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+              <Camera className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">Bilan photo à faire</p>
+              <p className="text-xs text-ink-2">
+                {joursDepuis} jours depuis la dernière série — la séquence guidée te remet dans la même position.
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setCaptureOpen(true)}>
+              <Camera className="size-4" /> Lancer
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Photos de progression</CardTitle>
@@ -186,7 +204,13 @@ export function PhotosTab() {
         ghosts={lastByKey}
       />
 
-      {compare && <CompareDialog compare={compare} onClose={() => setCompare(null)} />}
+      {compare && (
+        <PhotoCompareDialog
+          compare={compare}
+          onClose={() => setCompare(null)}
+          onDelete={(p, done) => del.mutate(p.id, { onSuccess: done })}
+        />
+      )}
     </div>
   );
 }
@@ -441,102 +465,6 @@ function CaptureDialog({
             </>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ---------- Comparateur avant / après ----------
-
-function CompareDialog({ compare, onClose }: { compare: { avant: Photo; apres: Photo }; onClose: () => void }) {
-  const [pos, setPos] = useState(50);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const dragging = useRef(false);
-
-  const move = (clientX: number) => {
-    const r = boxRef.current?.getBoundingClientRect();
-    if (!r) return;
-    setPos(Math.min(97, Math.max(3, ((clientX - r.left) / r.width) * 100)));
-  };
-
-  const del = useDeletePhoto();
-  const [confirmDel, setConfirmDel] = useState<Photo | null>(null);
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90dvh] p-0">
-        <div className="flex items-center justify-between px-6 pt-6">
-          <DialogTitle>Comparaison</DialogTitle>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmDel(compare.avant)}>
-              <Trash2 className="size-4 text-danger" /> Avant
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmDel(compare.apres)}>
-              <Trash2 className="size-4 text-danger" /> Après
-            </Button>
-          </div>
-        </div>
-        <div className="p-6 pt-4">
-          <div
-            ref={boxRef}
-            className="relative aspect-[3/4] max-h-[60dvh] w-full select-none overflow-hidden rounded-2xl bg-black"
-            onPointerDown={(e) => {
-              dragging.current = true;
-              move(e.clientX);
-              (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-            }}
-            onPointerMove={(e) => dragging.current && move(e.clientX)}
-            onPointerUp={() => (dragging.current = false)}
-          >
-                {/* Après en dessous ; avant par-dessus rogné à gauche (clip-path, pas de déformation) */}
-            <PhotoImg id={compare.apres.id} alt="Après" className="absolute inset-0 size-full object-cover" />
-            <PhotoImg
-              id={compare.avant.id}
-              alt="Avant"
-              className="absolute inset-0 size-full object-cover"
-              style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
-            />
-            {/* Curseur */}
-            <div className="absolute inset-y-0 w-0.5 bg-ink/90" style={{ left: `${pos}%` }}>
-              <div className="absolute left-1/2 top-1/2 flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-bg/90 backdrop-blur">
-                <ChevronLeft className="size-3.5" />
-                <ChevronRight className="size-3.5" />
-              </div>
-            </div>
-            <span className="absolute left-2 top-2 rounded-full bg-bg/70 px-2 py-0.5 text-[10px] font-bold backdrop-blur">
-              {formatDateFr(compare.avant.date)}
-            </span>
-            <span className="absolute right-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-on-accent">
-              {formatDateFr(compare.apres.date)}
-            </span>
-          </div>
-          <p className="mt-2 text-center text-[11px] text-ink-2">Glisse le curseur pour comparer avant / après.</p>
-        </div>
-
-        {confirmDel && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-bg/80 p-6 backdrop-blur-sm">
-            <div className="text-center">
-              <p className="mb-4 text-sm font-bold">Supprimer cette photo ?</p>
-              <div className="flex justify-center gap-2">
-                <Button variant="secondary" onClick={() => setConfirmDel(null)}><X className="size-4" /> Annuler</Button>
-                <Button
-                  variant="danger"
-                  onClick={() =>
-                    del.mutate(confirmDel.id, {
-                      onSuccess: () => {
-                        toast.success('Photo supprimée');
-                        setConfirmDel(null);
-                        onClose();
-                      },
-                    })
-                  }
-                >
-                  <Trash2 className="size-4" /> Supprimer
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );

@@ -30,7 +30,7 @@ import { SheetsProvider, serviceAccountEmail } from './providers/SheetsProvider.
 import type { DataProvider } from './providers/DataProvider.js';
 import { buildMockGrid } from './mock/seed.js';
 import { provisionSpreadsheet, parseSpreadsheetId } from './provision.js';
-import { DEMO_USER_EMAIL, DEMO_USER_PASSWORD, UserStore } from './users/store.js';
+import { DEMO_USER_EMAIL, DEMO_USER_PASSWORD, UserStore, verifyPassword } from './users/store.js';
 import type { UserRecord } from './users/store.js';
 import { DailyTrackingRepository } from './repositories/DailyTrackingRepository.js';
 import { ExerciseRepository } from './repositories/ExerciseRepository.js';
@@ -40,6 +40,16 @@ import { SettingsRepository } from './repositories/SettingsRepository.js';
 import { reportSessionToFullBody } from './repositories/FullBodyReporter.js';
 import { PhotoStore } from './photos.js';
 import { defaultUsersFile } from './users/store.js';
+import { defaultDbFile, openDb } from './db.js';
+import { SqliteProvider } from './providers/SqliteProvider.js';
+import { AlimentStore } from './aliments.js';
+import { ChampStore } from './champs.js';
+import { CommentaireStore } from './commentaires.js';
+import { autoBackup } from './backup.js';
+import { searchOpenFoodFacts, initLocalOff } from './off.js';
+import { OffDbStore } from './offDb.js';
+import { maybeAutoSync } from './offSync.js';
+import { registerAdminRoutes } from './admin.js';
 
 // ------------------------------------------------------------------
 // Multi-utilisateur : chaque requête est résolue vers le contexte de
@@ -82,6 +92,8 @@ export interface AppContext {
   mockCtx: DataCtx | null;
   /** Cache des contextes par spreadsheetId (mode sheets). */
   cache: Map<string, DataCtx>;
+  /** Base SQLite ouverte (mode sqlite uniquement). */
+  db: import('./db.js').Db | null;
   /** Résout userId -> utilisateur + contexte de données. */
   forUser(userId: string): Promise<{ user: UserRecord } & DataCtx>;
 }
@@ -96,13 +108,40 @@ export function buildContext(env: Env, provider?: DataProvider): AppContext {
     u.spreadsheetId = 'demo';
     void users.persist();
   }
+  // Compte coach : créé une fois si configuré par env.
+  if (env.COACH_EMAIL && env.COACH_PASSWORD && !users.byEmail(env.COACH_EMAIL)) {
+    const c = users.create(env.COACH_EMAIL, env.COACH_PASSWORD, 'coach');
+    if (env.DATA_MODE !== 'sheets') c.spreadsheetId = env.DATA_MODE === 'sqlite' ? 'sqlite' : 'demo';
+    void users.persist();
+  }
 
   const cache = new Map<string, DataCtx>();
+
+  // Mode SQLite : un seul fichier partagé, provider scopé par userId.
+  const db = env.DATA_MODE === 'sqlite' ? openDb(env.DB_FILE ?? defaultDbFile()) : null;
 
   const forUser: AppContext['forUser'] = async (userId) => {
     const user = users.byId(userId);
     if (!user) throw new AppError(401, ERR.UNAUTHORIZED, 'Compte introuvable');
     if (mockCtx) return { user, ...mockCtx };
+    if (db) {
+      // Premier accès : provisionne les onglets virtuels de l'utilisateur
+      // (idempotent ; la Liste est globale et n'est seedée qu'une fois).
+      // Détecté via l'absence de 'Suivi' — couvre aussi les comptes créés
+      // avant la migration ou liés à un classeur non importé.
+      const probe = new SqliteProvider(db, userId);
+      if (!(await probe.listSheets()).includes(SHEET_SUIVI)) {
+        await provisionSpreadsheet(probe);
+        if (!user.spreadsheetId) await users.setSpreadsheet(userId, 'sqlite');
+      }
+      const key = `sqlite:${userId}`;
+      let ctx = cache.get(key);
+      if (!ctx) {
+        ctx = buildDataCtx(new SqliteProvider(db, userId));
+        cache.set(key, ctx);
+      }
+      return { user, ...ctx };
+    }
     const spreadsheetId = user.spreadsheetId ?? env.GOOGLE_SPREADSHEET_ID;
     if (!spreadsheetId) {
       throw new AppError(
@@ -125,6 +164,7 @@ export function buildContext(env: Env, provider?: DataProvider): AppContext {
     auth: new AuthService(env, users),
     mockCtx,
     cache,
+    db,
     forUser,
   };
 }
@@ -225,8 +265,12 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     return {
       id: user.id,
       email: user.email,
+      role: user.role,
       mode: ctx.env.DATA_MODE,
-      needsSetup: !user.spreadsheetId,
+      // En mode sqlite il n'y a rien à lier — on saute l'écran de
+      // configuration. En sheets ET mock, l'écran reste affiché
+      // (liaison réelle ou simulée pour la démo).
+      needsSetup: !user.spreadsheetId && ctx.env.DATA_MODE !== 'sqlite',
       spreadsheetId: maskId(user.spreadsheetId),
       serviceAccountEmail: serviceAccountEmail(ctx.env),
     };
@@ -240,13 +284,13 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       throw new AppError(400, ERR.VALIDATION, 'Lien ou identifiant de classeur invalide');
     }
     if (ctx.env.DATA_MODE !== 'sheets') {
-      // Mode démo : liaison simulée — le provider mock sert les mêmes
-      // données fictives quel que soit l'ID stocké.
-      await ctx.users.setSpreadsheet(req.userId!, 'demo');
+      // Mode démo/sqlite : liaison simulée — les données vivent dans le
+      // store local quel que soit l'ID stocké.
+      await ctx.users.setSpreadsheet(req.userId!, ctx.env.DATA_MODE === 'sqlite' ? 'sqlite' : 'demo');
       return {
         linked: true,
         created: [],
-        seeded: ['Classeur fictif (mode démo)'],
+        seeded: [ctx.env.DATA_MODE === 'sqlite' ? 'Base locale' : 'Classeur fictif (mode démo)'],
         programImported: false,
         tabs: ['Suivi', 'Liste', 'Full body', 'Bilan', 'Programmes', 'Seances'],
       };
@@ -426,6 +470,173 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
 
   // Schéma journal exposé au frontend pour validation locale
   app.get('/api/schemas/journal', async () => journalValuesSchema.describe('journal'));
+
+  // ---------- Aliments (bibliothèque globale, lecture pour tous) ----------
+  const alimentStore = ctx.db ? new AlimentStore(ctx.db) : null;
+  const needAliments = () => {
+    if (!alimentStore) throw new AppError(400, ERR.VALIDATION, 'Aliments indisponibles hors mode SQLite');
+    return alimentStore;
+  };
+  const journalAlimentSchema = z.object({
+    alimentId: z.string().min(1),
+    quantiteG: z.number().positive().max(5000),
+  });
+  app.get('/api/aliments', async () => (alimentStore ? alimentStore.list() : []));
+
+  /** Recherche unifiée : bibliothèque locale d'abord, puis Open Food Facts.
+   *  OFF inaccessible ou vide → réponse quand même (locaux seuls). */
+  app.get('/api/aliments/recherche', async (req) => {
+    const { q } = req.query as { q?: string };
+    const query = (q ?? '').trim();
+    if (query.length < 2) return { locaux: [], enLigne: [] };
+    const locaux = alimentStore ? alimentStore.search(query) : [];
+    let enLigne: Awaited<ReturnType<typeof searchOpenFoodFacts>> = [];
+    try {
+      enLigne = await searchOpenFoodFacts(query);
+      // Masque les produits déjà en bibliothèque (même code-barres).
+      const codes = new Set(locaux.map((a) => a.codeBarre).filter(Boolean));
+      enLigne = enLigne.filter((a) => !a.codeBarre || !codes.has(a.codeBarre));
+    } catch {
+      /* OFF indisponible — les locaux suffisent */
+    }
+    return { locaux, enLigne };
+  });
+
+  app.get('/api/journal/:date/aliments', async (req) => {
+    const { date } = req.params as { date: string };
+    return needAliments().listJournal(req.userId!, date);
+  });
+  app.post('/api/journal/:date/aliments', async (req) => {
+    const { date } = req.params as { date: string };
+    const { alimentId, quantiteG } = parse(journalAlimentSchema, req.body);
+    return needAliments().addToJournal(req.userId!, date, alimentId, quantiteG);
+  });
+
+  /** Ajout depuis un résultat externe (OFF) : l'aliment est enregistré
+   *  en bibliothèque (dédupliqué par code-barres / nom) puis lié au journal. */
+  const alimentExterneSchema = z.object({
+    nom: z.string().min(1).max(160),
+    marque: z.string().max(120).nullish(),
+    codeBarre: z.string().max(30).nullish(),
+    kcal: z.number().min(0).max(5000),
+    proteines: z.number().min(0).max(500),
+    glucides: z.number().min(0).max(500),
+    lipides: z.number().min(0).max(500),
+    quantiteG: z.number().min(1).max(5000),
+  });
+  app.post('/api/journal/:date/aliments-externe', async (req) => {
+    const { date } = req.params as { date: string };
+    const body = parse(alimentExterneSchema, req.body);
+    const { aliment } = needAliments().findOrCreate({
+      nom: body.marque ? `${body.nom} (${body.marque})` : body.nom,
+      kcal: body.kcal,
+      proteines: body.proteines,
+      glucides: body.glucides,
+      lipides: body.lipides,
+      codeBarre: body.codeBarre ?? null,
+      source: 'off',
+    });
+    return needAliments().addToJournal(req.userId!, date, aliment.id, body.quantiteG);
+  });
+  app.patch('/api/journal-aliments/:id', async (req) => {
+    const { id } = req.params as { id: string };
+    const { quantiteG } = parse(z.object({ quantiteG: z.number().min(1).max(5000) }), req.body);
+    return needAliments().updateJournalQty(req.userId!, id, quantiteG);
+  });
+  app.delete('/api/journal-aliments/:id', async (req) => {
+    const { id } = req.params as { id: string };
+    needAliments().removeFromJournal(req.userId!, id);
+    return { ok: true };
+  });
+
+  // ---------- Champs de suivi personnalisés (définis par le coach) ----------
+  const champStore = ctx.db ? new ChampStore(ctx.db) : null;
+  const champValeurSchema = z.object({
+    champId: z.string().min(1).max(60),
+    valeur: z.string().max(120).nullable(),
+  });
+  app.get('/api/champs', async (req) => (champStore ? champStore.list(req.userId!) : []));
+  app.get('/api/champs/valeurs', async (req) => {
+    const { date } = req.query as { date?: string };
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new AppError(400, ERR.VALIDATION, 'Paramètre date requis (YYYY-MM-DD)');
+    }
+    return champStore ? champStore.getValues(req.userId!, date) : [];
+  });
+  app.put('/api/champs/valeurs', async (req) => {
+    if (!champStore) throw new AppError(400, ERR.VALIDATION, 'Champs personnalisés indisponibles hors mode SQLite');
+    const { date } = req.query as { date?: string };
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new AppError(400, ERR.VALIDATION, 'Paramètre date requis (YYYY-MM-DD)');
+    }
+    const { champId, valeur } = parse(champValeurSchema, req.body);
+    champStore.setValue(req.userId!, date, champId, valeur);
+    return champStore.getValues(req.userId!, date);
+  });
+
+  // ---------- Commentaires d'une journée (client ↔ coach) ----------
+  const commentaireStore = ctx.db ? new CommentaireStore(ctx.db) : null;
+  const needCommentaires = () => {
+    if (!commentaireStore) throw new AppError(400, ERR.VALIDATION, 'Commentaires indisponibles hors mode SQLite');
+    return commentaireStore;
+  };
+  const commentaireSchema = z.object({ texte: z.string().min(1).max(2000) });
+
+  app.get('/api/journal/:date/commentaires', async (req) => {
+    const { date } = req.params as { date: string };
+    return needCommentaires().list(req.userId!, date);
+  });
+  app.post('/api/journal/:date/commentaires', async (req) => {
+    const { date } = req.params as { date: string };
+    const { texte } = parse(commentaireSchema, req.body);
+    return needCommentaires().add(req.userId!, date, 'client', texte);
+  });
+  // Le client ne peut retirer que ses propres messages.
+  app.delete('/api/journal/commentaires/:id', async (req) => {
+    const { id } = req.params as { id: string };
+    needCommentaires().remove(req.userId!, id, 'client');
+    return { ok: true };
+  });
+
+  // ---------- Changement de mot de passe ----------
+  app.post('/api/me/motdepasse', async (req) => {
+    const { actuel, nouveau } = parse(
+      z.object({ actuel: z.string().min(1).max(200), nouveau: z.string().min(4).max(200) }),
+      req.body,
+    );
+    const user = ctx.users.byId(req.userId!);
+    if (!user) throw new AppError(401, ERR.UNAUTHORIZED, 'Compte introuvable');
+    if (!verifyPassword(user.passwordHash, actuel)) {
+      throw new AppError(400, ERR.VALIDATION, 'Mot de passe actuel incorrect');
+    }
+    await ctx.users.setPassword(user.id, nouveau);
+    return { ok: true };
+  });
+
+  // ---------- Routes réservées au coach ----------
+  const dataDir = dirname(ctx.env.USERS_FILE ?? defaultUsersFile());
+  registerAdminRoutes(app, ctx, photoStore, alimentStore, champStore, commentaireStore, dataDir);
+
+  // Sauvegarde automatique de la base au démarrage (rétention 10, ≥ 20 h).
+  if (ctx.db) {
+    void autoBackup(ctx.db, dirname(ctx.env.USERS_FILE ?? defaultUsersFile()) + '/backups').catch(
+      (err) => app.log.warn({ err }, 'Sauvegarde auto échouée'),
+    );
+  }
+
+  // Copie locale Open Food Facts : recherche produits instantanée et
+  // sans limite de débit ; synchronisation auto si > 48 h (OFF_SYNC=off pour couper).
+  if (ctx.db) {
+    const offDb = new OffDbStore(ctx.db);
+    initLocalOff(offDb);
+    if (ctx.env.OFF_SYNC !== 'off') {
+      try {
+        maybeAutoSync(offDb);
+      } catch (err) {
+        app.log.warn({ err }, 'Synchro OFF échouée');
+      }
+    }
+  }
 
   return app;
 }

@@ -62,6 +62,9 @@ export class AuthService {
     if (!user || !verifyPassword(user.passwordHash, password)) {
       throw new AppError(401, ERR.UNAUTHORIZED, 'E-mail ou mot de passe incorrect');
     }
+    if (user.disabled) {
+      throw new AppError(403, ERR.UNAUTHORIZED, 'Compte désactivé — contacte ton coach');
+    }
     return { ...(await this.issueToken(user.id)), user };
   }
 
@@ -81,10 +84,9 @@ export class AuthService {
     }
     try {
       const { payload } = await jwtVerify(authorization.slice(7), this.secret);
-      if (typeof payload.sub !== 'string' || !this.users.byId(payload.sub)) {
-        throw new Error('unknown user');
-      }
-      return payload.sub;
+      const u = typeof payload.sub === 'string' ? this.users.byId(payload.sub) : undefined;
+      if (!u || u.disabled) throw new Error('unknown user');
+      return payload.sub!;
     } catch {
       throw new AppError(401, ERR.UNAUTHORIZED, 'Session expirée, reconnectez-vous');
     }

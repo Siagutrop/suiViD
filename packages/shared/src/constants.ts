@@ -69,6 +69,11 @@ export const DEFAULT_SETTINGS = {
   reposDefautSec: 90,
   unite: 'kg',
   timezone: DEFAULT_TIMEZONE,
+  nomAffiche: null,
+  tailleCm: null,
+  dateNaissance: null,
+  noteCoach: null,
+  joursSeance: [] as number[],
 } as const;
 
 /** Noms des onglets autorisés en écriture par l'API (whitelist stricte). */

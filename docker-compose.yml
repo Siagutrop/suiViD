@@ -17,6 +17,9 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?definir AUTH_SECRET dans .env}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
       USERS_FILE: /data/users.json
+      DB_FILE: ${DB_FILE:-/data/suivid.db}
+      COACH_EMAIL: ${COACH_EMAIL:-}
+      COACH_PASSWORD: ${COACH_PASSWORD:-}
       SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-604800}
       PORT: 3001
       HOST: 0.0.0.0

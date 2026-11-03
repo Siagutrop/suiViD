@@ -96,6 +96,41 @@ export class SessionRepository {
     return s;
   }
 
+  /**
+   * Suppression (admin) : enlève la ligne Seances + toutes les lignes
+   * SeanceSeries de la séance, en réécrivant chaque corps de table
+   * (la dernière ligne de l'ancien corps est blanchie).
+   */
+  async delete(id: string): Promise<void> {
+    await this.ensureTabs();
+    const headers = await this.provider.getRange(SHEET_SEANCES, 'A2:I1000');
+    const keptHeads = headers.filter((r) => toText(r[0]) !== id);
+    const found = keptHeads.length !== headers.length;
+    if (!found) throw new AppError(404, ERR.NOT_FOUND, `Séance introuvable : ${id}`);
+
+    const sets = await this.provider.getRange(SHEET_SEANCE_SERIES, 'A2:H5000');
+    const keptSets = sets.filter((r) => toText(r[0]) !== id);
+
+    const blankHeads = Array.from({ length: headers.length - keptHeads.length }, () =>
+      Array<null>(9).fill(null),
+    );
+    const blankSets = Array.from({ length: sets.length - keptSets.length }, () =>
+      Array<null>(8).fill(null),
+    );
+    if (keptHeads.length + blankHeads.length) {
+      await this.provider.updateRange(SHEET_SEANCES, `A2:I${headers.length + 1}`, [
+        ...keptHeads,
+        ...blankHeads,
+      ]);
+    }
+    if (keptSets.length + blankSets.length) {
+      await this.provider.updateRange(SHEET_SEANCE_SERIES, `A2:H${sets.length + 1}`, [
+        ...keptSets,
+        ...blankSets,
+      ]);
+    }
+  }
+
   /** Dernière séance terminée (pour la carte « prochaine séance »). */
   async lastSession(): Promise<Session | null> {
     const list = await this.list(1);

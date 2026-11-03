@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   Activity,
+  Apple,
   Dumbbell,
   FlaskConical,
   Home,
@@ -9,6 +10,7 @@ import {
   LogOut,
   NotebookPen,
   Settings,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { setToken } from '@/lib/api';
@@ -27,10 +29,19 @@ function logout() {
 const NAV = [
   { to: '/', label: 'Accueil', icon: Home },
   { to: '/journal', label: 'Journal', icon: NotebookPen },
+  { to: '/nutrition', label: 'Nutrition', icon: Apple },
   { to: '/seances', label: 'Séances', icon: Dumbbell },
   { to: '/exercices', label: 'Exercices', icon: Activity },
   { to: '/progres', label: 'Progrès', icon: LineChart },
 ];
+
+const COACH_NAV = { to: '/admin', label: 'Coach', icon: Users };
+
+/** Destinations visibles selon le rôle (l'entrée Coach est réservée aux coachs). */
+function useNav() {
+  const { data: me } = useMe();
+  return me?.role === 'coach' ? [...NAV, COACH_NAV] : NAV;
+}
 
 function DemoBanner() {
   const { data: meta } = useMeta();
@@ -44,6 +55,7 @@ function DemoBanner() {
 }
 
 function SideNav() {
+  const nav = useNav();
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-line bg-bg-2/60 backdrop-blur-xl lg:flex">
       <div className="flex items-center gap-3 px-5 pb-6 pt-6">
@@ -58,7 +70,7 @@ function SideNav() {
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3">
-        {NAV.map(({ to, label, icon: Icon }) => (
+        {nav.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -118,10 +130,11 @@ function UserBlock() {
 
 function BottomNav() {
   const { pathname } = useLocation();
+  const nav = useNav();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg-2/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-      <div className="mx-auto grid max-w-lg grid-cols-5">
-        {NAV.map(({ to, label, icon: Icon }) => {
+      <div className={cn('mx-auto grid max-w-lg', nav.length === 6 ? 'grid-cols-6' : 'grid-cols-5')}>
+        {nav.map(({ to, label, icon: Icon }) => {
           const active = to === '/' ? pathname === '/' : pathname.startsWith(to);
           return (
             <NavLink
@@ -155,7 +168,12 @@ export function AppShell() {
       <DemoBanner />
       <SideNav />
       <main className="pb-28 pt-6 lg:ml-60 lg:pb-12 lg:pt-8">
-        <div className="mx-auto w-full max-w-3xl px-4 lg:max-w-5xl lg:px-8">
+        <div className={cn(
+          'mx-auto w-full max-w-3xl px-4 lg:px-8',
+          // L'espace coach est pensé desktop : plus de place pour les
+          // tableaux et les dispositions en colonnes.
+          location.pathname.startsWith('/admin') ? 'lg:max-w-7xl' : 'lg:max-w-5xl',
+        )}>
           {/* Transition douce entre les pages */}
           <motion.div
             key={location.pathname}

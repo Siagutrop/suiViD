@@ -85,10 +85,32 @@ export interface UserSettings {
   reposDefautSec: number; // durée par défaut du minuteur de récupération
   unite: 'kg';
   timezone: string; // ex. Europe/Paris
+  // ----- Paramétrable par le coach -----
+  nomAffiche: string | null; // prénom/nom affiché au client
+  tailleCm: number | null; // cm — morphologie du client
+  dateNaissance: string | null; // YYYY-MM-DD
+  noteCoach: string | null; // consignes/message affiché sur l'accueil
+  joursSeance: number[]; // indices 0-6 (0 = dimanche) — planning hebdo
+}
+
+/** Champ de suivi personnalisé défini par le coach (ex. « Tour de taille »). */
+export interface ChampCustom {
+  id: string;
+  nom: string;
+  unite: string; // cm, L, /10, … — affichage seul
+  ordre: number;
+}
+
+/** Valeur saisie pour un champ personnalisé à une date. */
+export interface ChampValeur {
+  champId: string;
+  nom: string;
+  unite: string;
+  valeur: string | null;
 }
 
 export interface ApiMeta {
-  mode: 'mock' | 'sheets';
+  mode: 'mock' | 'sheets' | 'sqlite';
   version: string;
   spreadsheetId: string | null;
   tabs: Record<string, boolean>; // présence des onglets attendus
@@ -98,7 +120,8 @@ export interface ApiMeta {
 export interface ApiMe {
   id: string;
   email: string;
-  mode: 'mock' | 'sheets';
+  role: 'user' | 'coach';
+  mode: 'mock' | 'sheets' | 'sqlite';
   /** true tant qu'aucun classeur n'est lié (setup de 1re connexion). */
   needsSetup: boolean;
   /** ID du classeur masqué, ex. « ••••••xK9f2A » — jamais complet. */
@@ -135,6 +158,47 @@ export interface ApiError {
   details?: unknown;
 }
 
+/** Aliment de la bibliothèque (macros pour 100 g). */
+export interface Aliment {
+  id: string;
+  nom: string;
+  kcal: number;
+  proteines: number;
+  glucides: number;
+  lipides: number;
+  codeBarre?: string | null;
+  source?: 'perso' | 'off' | 'import';
+  /** Famille d'équivalence renseignée par le coach (« Féculents », « Protéines »…). */
+  groupe?: string | null;
+}
+
+/** Résultat de recherche externe (Open Food Facts) — non encore en bibliothèque. */
+export interface AlimentExterne {
+  source: 'off';
+  codeBarre: string | null;
+  nom: string;
+  marque: string | null;
+  kcal: number;
+  proteines: number;
+  glucides: number;
+  lipides: number;
+  image: string | null;
+  /** true si les 3 macros sont renseignés dans la base. */
+  complet: boolean;
+}
+
+/** Ligne d'aliment consommé dans un journal. */
+export interface JournalAliment {
+  id: string;
+  alimentId: string;
+  nom: string;
+  quantiteG: number;
+  kcal: number;
+  proteines: number;
+  glucides: number;
+  lipides: number;
+}
+
 /** Photo de progression (fichier sur le serveur, métadonnées ici). */
 export interface Photo {
   id: string;
@@ -143,4 +207,37 @@ export interface Photo {
   date: string; // ISO YYYY-MM-DD
   ext: 'jpg' | 'png' | 'webp';
   createdAt: string;
+}
+
+/** Message du fil de commentaires d'une journée (client ↔ coach). */
+export interface Commentaire {
+  id: string;
+  date: string;
+  auteur: 'client' | 'coach';
+  texte: string;
+  createdAt: string;
+}
+
+/** Alerte de suivi affichée sur le tableau de bord coach. */
+export interface Alerte {
+  type: 'silence' | 'pesee' | 'seances' | 'photos';
+  message: string;
+}
+
+/** Ligne du tableau de bord coach — agrégats par client. */
+export interface DashboardClient {
+  id: string;
+  email: string;
+  disabled: boolean;
+  createdAt: string;
+  dernierJournal: string | null;
+  journalSemaine: number; // entrées remplies sur 7 j
+  seancesSemaine: number; // séances faites cette semaine (lun→auj.)
+  seancesPrevues: number; // séances planifiées passées cette semaine
+  dernierSeance: string | null;
+  poids: number | null;
+  poidsDelta7: number | null; // kg vs dernière pesée ≥ 5 j
+  dernierePhoto: string | null;
+  nbPhotos: number;
+  alertes: Alerte[];
 }

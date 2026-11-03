@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, FileSpreadsheet, LogOut, Palette, PersonStanding, Save } from 'lucide-react';
+import { Check, FileSpreadsheet, KeyRound, LogOut, Palette, PersonStanding, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LinkSheetResult, UserSettings } from '@suivi/shared';
-import { useParametres, useSaveParametres, useMeta, useMe } from '@/hooks/queries';
+import { useParametres, useSaveParametres, useMeta, useMe, useChangePassword } from '@/hooks/queries';
 import { api, ApiError, setToken } from '@/lib/api';
 import { applyTheme, getTheme, THEMES, type ThemeId } from '@/lib/theme';
 import { GENDERS, getBuild, setBuild, type BuildId } from '@/lib/body';
@@ -172,6 +172,52 @@ type Form = Record<Exclude<keyof UserSettings, 'unite' | 'timezone' | 'reposDefa
   timezone: string;
 };
 
+/** Changement de mot de passe — vérification de l'actuel côté serveur. */
+function MotDePasseCard() {
+  const change = useChangePassword();
+  const [actuel, setActuel] = useState('');
+  const [nouveau, setNouveau] = useState('');
+  const [confirm, setConfirm] = useState('');
+
+  const submit = async () => {
+    if (nouveau !== confirm) {
+      toast.error('Les deux nouveaux mots de passe ne correspondent pas');
+      return;
+    }
+    try {
+      await change.mutateAsync({ actuel, nouveau });
+      toast.success('Mot de passe modifié');
+      setActuel('');
+      setNouveau('');
+      setConfirm('');
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Modification impossible');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="size-5" /> Mot de passe</CardTitle></CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-3">
+        <Field label="Actuel">
+          <Input type="password" autoComplete="current-password" value={actuel} onChange={(e) => setActuel(e.target.value)} />
+        </Field>
+        <Field label="Nouveau (4+ caractères)">
+          <Input type="password" autoComplete="new-password" value={nouveau} onChange={(e) => setNouveau(e.target.value)} />
+        </Field>
+        <Field label="Confirmer">
+          <Input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+        </Field>
+        <div className="sm:col-span-3">
+          <Button onClick={submit} loading={change.isPending} disabled={!actuel || nouveau.length < 4 || !confirm}>
+            <KeyRound className="size-4" /> Modifier le mot de passe
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ParametresPage() {
   const { data: settings, isLoading } = useParametres();
   const { data: meta } = useMeta();
@@ -208,6 +254,12 @@ export function ParametresPage() {
       reposDefautSec: num(f.reposDefautSec) ?? 90,
       unite: 'kg',
       timezone: f.timezone || 'Europe/Paris',
+      // Champs gérés par le coach — on préserve les valeurs existantes.
+      nomAffiche: settings?.nomAffiche ?? null,
+      tailleCm: settings?.tailleCm ?? null,
+      dateNaissance: settings?.dateNaissance ?? null,
+      noteCoach: settings?.noteCoach ?? null,
+      joursSeance: settings?.joursSeance ?? [],
     };
     try {
       await save.mutateAsync(payload);
@@ -222,6 +274,7 @@ export function ParametresPage() {
       <PageHeader title="Paramètres" subtitle="Objectifs et préférences — stockés dans l'onglet Parametres" />
       <div className="mb-5 space-y-5">
         <CompteCard />
+        <MotDePasseCard />
         <ThemeCard />
         <MorphoCard />
       </div>

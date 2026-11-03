@@ -23,6 +23,34 @@ npm run dev
 Le mode **démo** (`DATA_MODE=mock`, défaut) charge un classeur fictif
 (bannière « Mode démo ») — rien n'est synchronisé vers Google.
 
+## Mode SQLite (recommandé)
+
+```env
+DATA_MODE=sqlite
+DB_FILE=./data/suivid.db        # défaut : data/suivid.db à côté de users.json
+AUTH_SECRET=<chaîne aléatoire longue>
+COACH_EMAIL=coach@suivid.app    # compte coach créé automatiquement
+COACH_PASSWORD=<mot de passe fort>
+```
+
+Toutes les données vivent dans un fichier SQLite unique — plus besoin
+de Google Sheets. La bibliothèque d'exercices et d'aliments est
+partagée et administrée par le coach ; chaque client a son espace
+(journal, séances, programmes, photos) isolé par compte.
+
+Le compte `COACH_EMAIL` dispose de l'espace **Coach** : clients
+(activation, journal, séances, photos), édition des programmes,
+bibliothèque d'exercices et d'aliments.
+
+**Migration depuis Google Sheets** (une fois) :
+
+```bash
+npm run migrate -w apps/api -- <email-du-client>
+```
+
+Recopie tous les onglets du classeur lié dans SQLite sans toucher à
+la source. À exécuter avant de passer `DATA_MODE=sqlite`.
+
 ## Mode connecté (Google Sheets)
 
 ```env
@@ -70,7 +98,7 @@ Portainer.
 suivi-raphael/
 ├── apps/
 │   ├── web/        React + Vite + Tailwind (PWA)
-│   └── api/        Fastify + Google Sheets API v4
+│   └── api/        Fastify — SQLite / Google Sheets / mock
 ├── packages/
 │   └── shared/     Types + schémas Zod partagés
 ├── docker/         Dockerfile.web / Dockerfile.api / nginx.conf

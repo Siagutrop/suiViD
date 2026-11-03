@@ -4,7 +4,11 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  DATA_MODE: z.enum(['mock', 'sheets']).default('mock'),
+  DATA_MODE: z.enum(['mock', 'sheets', 'sqlite']).default('mock'),
+  /** Fichier SQLite applicatif (défaut : <repo>/data/suivid.db). */
+  DB_FILE: z.string().optional(),
+  /** 'off' désactive la synchro auto du catalogue Open Food Facts. */
+  OFF_SYNC: z.string().optional(),
   AUTH_SECRET: z.string().min(8).default('dev-secret-change-me-in-production!!'),
   /** Création de compte ouverte (true) ou désactivée (false). */
   ALLOW_SIGNUP: z
@@ -15,6 +19,9 @@ const envSchema = z.object({
   USERS_FILE: z.string().optional(),
   /** Mot de passe du compte démo créé si la base est vide (défaut : "dev"). */
   DEMO_PASSWORD: z.string().min(4).optional(),
+  /** Compte coach créé au démarrage si défini et absent (rôle admin). */
+  COACH_EMAIL: z.string().email().optional(),
+  COACH_PASSWORD: z.string().min(4).optional(),
   SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
   PORT: z.coerce.number().int().positive().default(3001),
   HOST: z.string().default('0.0.0.0'),
