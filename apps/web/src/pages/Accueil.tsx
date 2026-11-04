@@ -24,7 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { seriesByDay, todayInTimezone } from '@suivi/shared';
-import { useJournalRange, useParametres, useProgrammes, useSeances, useToday } from '@/hooks/queries';
+import { useJournalRange, useMe, useParametres, useProgrammes, useSeances, useToday } from '@/hooks/queries';
 import { formatDateFr, formatKg, formatNum, formatShort, greeting } from '@/lib/utils';
 import { phraseDuJour } from '@/lib/phrases';
 import { computeBadges, getSeenBadges, markBadgesSeen, streakJours, type Badge } from '@/lib/rewards';
@@ -57,6 +57,7 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 
 export function AccueilPage() {
   const { data: today, isLoading } = useToday();
+  const { data: me } = useMe();
   const { data: settings } = useParametres();
   const { data: journal } = useJournalRange(60);
   const { data: programmes } = useProgrammes();
@@ -112,7 +113,11 @@ export function AccueilPage() {
       {/* En-tête */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">{greeting()} {settings?.nomAffiche ?? 'Raphaël'}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            {greeting()}
+            {me?.role === 'coach' ? ' Coach' : ''}
+            {settings?.nomAffiche ? ` ${settings.nomAffiche}` : ''}
+          </h1>
           <p className="mt-0.5 text-sm capitalize text-ink-2">{formatDateFr(todayKey)}</p>
         </div>
         <Button asChild variant="ghost" size="icon" aria-label="Paramètres">

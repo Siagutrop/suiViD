@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
-import { createReadStream } from 'node:fs';
+import fastifyStatic from '@fastify/static';
+import { createReadStream, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { z } from 'zod';
 import {
@@ -624,6 +625,22 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     void autoBackup(ctx.db, dirname(ctx.env.USERS_FILE ?? defaultUsersFile()) + '/backups').catch(
       (err) => app.log.warn({ err }, 'Sauvegarde auto échouée'),
     );
+  }
+
+  // Déploiement tout-en-un : si WEB_DIST pointe vers un build web,
+  // l'API sert aussi le front. Les routes /api/* passent d'abord ;
+  // le reste retombe sur index.html (SPA).
+  const webDist = ctx.env.WEB_DIST;
+  if (webDist && existsSync(webDist)) {
+    await app.register(fastifyStatic, { root: webDist, prefix: '/' });
+    app.setNotFoundHandler((req, reply) => {
+      if (req.url.startsWith('/api/')) {
+        const { status, body } = toApiError(new AppError(404, ERR.NOT_FOUND, 'Route inconnue'));
+        void reply.status(status).send(body);
+        return;
+      }
+      void reply.sendFile('index.html');
+    });
   }
 
   return app;

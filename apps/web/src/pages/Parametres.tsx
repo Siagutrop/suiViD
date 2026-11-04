@@ -236,6 +236,7 @@ export function ParametresPage() {
         poidsDepart: settings.poidsDepart?.toString() ?? '',
         reposDefautSec: String(settings.reposDefautSec),
         timezone: settings.timezone,
+        nomAffiche: settings.nomAffiche ?? '',
       });
     }
   }, [settings, form]);
@@ -254,8 +255,8 @@ export function ParametresPage() {
       reposDefautSec: num(f.reposDefautSec) ?? 90,
       unite: 'kg',
       timezone: f.timezone || 'Europe/Paris',
+      nomAffiche: f.nomAffiche?.trim() || null,
       // Champs gérés par le coach — on préserve les valeurs existantes.
-      nomAffiche: settings?.nomAffiche ?? null,
       tailleCm: settings?.tailleCm ?? null,
       dateNaissance: settings?.dateNaissance ?? null,
       noteCoach: settings?.noteCoach ?? null,
@@ -282,6 +283,12 @@ export function ParametresPage() {
         <Skeleton className="h-96 w-full" />
       ) : (
         <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
+          <Card>
+            <CardHeader><CardTitle>Profil</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+              <Field label="Nom affiché"><Input type="text" placeholder="Ton prénom" {...form.register('nomAffiche')} /></Field>
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader><CardTitle>Objectifs quotidiens</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-2 gap-4 lg:grid-cols-3">
