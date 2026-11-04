@@ -24,7 +24,7 @@ services:
       COACH_EMAIL: ${COACH_EMAIL:-}
       COACH_PASSWORD: ${COACH_PASSWORD:-}
       SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-604800}
-      PORT: 3001
+      PORT: ${PORT:-3001}
       HOST: 0.0.0.0
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -32,9 +32,12 @@ services:
       # Base SQLite + comptes + photos + sauvegardes — tout persiste ici.
       - suivid-data:/data
     ports:
-      - "${WEB_PORT:-8080}:3001"
+      # Port hôte exposé — surchargeable via les env vars Portainer
+      # (ou .env) : WEB_PORT=9090 → http://serveur:9090
+      # PORT (ci-dessus) règle le port interne si besoin.
+      - "${WEB_PORT:-8080}:${PORT:-3001}"
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 3001) + '/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
