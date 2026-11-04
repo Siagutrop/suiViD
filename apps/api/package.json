@@ -11,8 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "setup-sheets": "tsx src/scripts/setup-sheets.ts",
-    "migrate": "tsx src/migrate-from-sheets.ts",
-    "import-off": "tsx src/offSync.cli.ts"
+    "migrate": "tsx src/migrate-from-sheets.ts"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",

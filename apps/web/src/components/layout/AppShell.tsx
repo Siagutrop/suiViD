@@ -29,7 +29,8 @@ function logout() {
 const NAV = [
   { to: '/', label: 'Accueil', icon: Home },
   { to: '/journal', label: 'Journal', icon: NotebookPen },
-  { to: '/nutrition', label: 'Nutrition', icon: Apple },
+  // [NUTRITION] désactivé — décommenter pour réactiver l'onglet.
+  // { to: '/nutrition', label: 'Nutrition', icon: Apple },
   { to: '/seances', label: 'Séances', icon: Dumbbell },
   { to: '/exercices', label: 'Exercices', icon: Activity },
   { to: '/progres', label: 'Progrès', icon: LineChart },

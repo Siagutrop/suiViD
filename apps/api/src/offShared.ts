@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------
-// Partagé entre le proxy OFF (off.ts) et la copie locale (offDb.ts) —
+// Partagé entre le proxy OFF (off.ts) et ses variantes de recherche —
 // mots vides et extraction du token enseigne.
 // ------------------------------------------------------------------
 

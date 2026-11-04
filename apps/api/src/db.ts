@@ -112,37 +112,6 @@ export function openDb(file: string): Db {
     );
     CREATE INDEX IF NOT EXISTS idx_journal_commentaires ON journal_commentaires(user_id, date);
 
-    -- Copie locale Open Food Facts (produits vendus en France) —
-    -- recherche instantanée sans dépendre de l'API externe.
-    CREATE TABLE IF NOT EXISTS off_products (
-      code      TEXT PRIMARY KEY,
-      nom       TEXT NOT NULL,
-      marque    TEXT,
-      kcal      REAL NOT NULL,
-      proteines REAL NOT NULL DEFAULT 0,
-      glucides  REAL NOT NULL DEFAULT 0,
-      lipides   REAL NOT NULL DEFAULT 0,
-      scans     INTEGER NOT NULL DEFAULT 0
-    );
-    CREATE INDEX IF NOT EXISTS idx_off_scans ON off_products(scans DESC);
-    CREATE VIRTUAL TABLE IF NOT EXISTS off_fts USING fts5(nom, marque, code UNINDEXED);
-    -- Staging : l'import remplit cette table puis bascule atomiquement —
-    -- un téléchargement qui échoue ne détruit pas la copie existante.
-    CREATE TABLE IF NOT EXISTS off_products_staging (
-      code      TEXT PRIMARY KEY,
-      nom       TEXT NOT NULL,
-      marque    TEXT,
-      kcal      REAL NOT NULL,
-      proteines REAL NOT NULL DEFAULT 0,
-      glucides  REAL NOT NULL DEFAULT 0,
-      lipides   REAL NOT NULL DEFAULT 0,
-      scans     INTEGER NOT NULL DEFAULT 0
-    );
-    CREATE TABLE IF NOT EXISTS off_meta (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      last_sync TEXT,
-      count    INTEGER NOT NULL DEFAULT 0
-    );
   `);
 
   // Colonnes ajoutées après création initiale — l'ALTER échoue

@@ -8,7 +8,8 @@ import { LoginPage } from '@/pages/Login';
 import { SetupPage } from '@/pages/Setup';
 import { AccueilPage } from '@/pages/Accueil';
 import { JournalPage } from '@/pages/Journal';
-import { NutritionPage } from '@/pages/Nutrition';
+// [NUTRITION] désactivé — imports conservés pour réactivation.
+// import { NutritionPage } from '@/pages/Nutrition';
 import { SeancesPage } from '@/pages/Seances';
 import { ProgrammePage } from '@/pages/Programme';
 import { SeanceActivePage } from '@/pages/SeanceActive';
@@ -21,7 +22,7 @@ import { AdminClientsPage } from '@/pages/admin/AdminClients';
 import { AdminClientPage } from '@/pages/admin/AdminClient';
 import { AdminProgrammePage } from '@/pages/admin/AdminProgramme';
 import { AdminExercicesPage } from '@/pages/admin/AdminExercices';
-import { AdminAlimentsPage } from '@/pages/admin/AdminAliments';
+// import { AdminAlimentsPage } from '@/pages/admin/AdminAliments';
 
 /** Splash pendant la récupération du profil. */
 function Splash() {
@@ -55,7 +56,8 @@ function AuthedApp() {
       <Route element={<AppShell />}>
         <Route index element={<AccueilPage />} />
         <Route path="/journal" element={<JournalPage />} />
-        <Route path="/nutrition" element={<NutritionPage />} />
+        {/* [NUTRITION] désactivé — décommenter pour réactiver la page. */}
+        {/* <Route path="/nutrition" element={<NutritionPage />} /> */}
         <Route path="/seances" element={<SeancesPage />} />
         <Route path="/seances/:id" element={<SeanceDetailPage />} />
         <Route path="/programmes/:id" element={<ProgrammePage />} />
@@ -70,7 +72,8 @@ function AuthedApp() {
             <Route path="/admin/clients/:id" element={<AdminClientPage />} />
             <Route path="/admin/clients/:id/programmes/:progId" element={<AdminProgrammePage />} />
             <Route path="/admin/exercices" element={<AdminExercicesPage />} />
-            <Route path="/admin/aliments" element={<AdminAlimentsPage />} />
+            {/* [NUTRITION] désactivé — décommenter pour réactiver la page. */}
+            {/* <Route path="/admin/aliments" element={<AdminAlimentsPage />} /> */}
           </>
         )}
         <Route path="*" element={<Navigate to="/" replace />} />

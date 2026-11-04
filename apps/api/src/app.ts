@@ -46,9 +46,7 @@ import { AlimentStore } from './aliments.js';
 import { ChampStore } from './champs.js';
 import { CommentaireStore } from './commentaires.js';
 import { autoBackup } from './backup.js';
-import { searchOpenFoodFacts, initLocalOff } from './off.js';
-import { OffDbStore } from './offDb.js';
-import { maybeAutoSync } from './offSync.js';
+import { searchOpenFoodFacts } from './off.js';
 import { registerAdminRoutes } from './admin.js';
 
 // ------------------------------------------------------------------
@@ -472,7 +470,10 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   app.get('/api/schemas/journal', async () => journalValuesSchema.describe('journal'));
 
   // ---------- Aliments (bibliothèque globale, lecture pour tous) ----------
-  const alimentStore = ctx.db ? new AlimentStore(ctx.db) : null;
+  // [NUTRITION] désactivé — passer à true pour réactiver tout le module
+  // (routes aliments, recherche OFF, journal alimentaire côté coach).
+  const NUTRITION_ENABLED: boolean = false;
+  const alimentStore = NUTRITION_ENABLED && ctx.db ? new AlimentStore(ctx.db) : null;
   const needAliments = () => {
     if (!alimentStore) throw new AppError(400, ERR.VALIDATION, 'Aliments indisponibles hors mode SQLite');
     return alimentStore;
@@ -486,6 +487,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   /** Recherche unifiée : bibliothèque locale d'abord, puis Open Food Facts.
    *  OFF inaccessible ou vide → réponse quand même (locaux seuls). */
   app.get('/api/aliments/recherche', async (req) => {
+    if (!NUTRITION_ENABLED) return { locaux: [], enLigne: [] };
     const { q } = req.query as { q?: string };
     const query = (q ?? '').trim();
     if (query.length < 2) return { locaux: [], enLigne: [] };
@@ -622,20 +624,6 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     void autoBackup(ctx.db, dirname(ctx.env.USERS_FILE ?? defaultUsersFile()) + '/backups').catch(
       (err) => app.log.warn({ err }, 'Sauvegarde auto échouée'),
     );
-  }
-
-  // Copie locale Open Food Facts : recherche produits instantanée et
-  // sans limite de débit ; synchronisation auto si > 48 h (OFF_SYNC=off pour couper).
-  if (ctx.db) {
-    const offDb = new OffDbStore(ctx.db);
-    initLocalOff(offDb);
-    if (ctx.env.OFF_SYNC !== 'off') {
-      try {
-        maybeAutoSync(offDb);
-      } catch (err) {
-        app.log.warn({ err }, 'Synchro OFF échouée');
-      }
-    }
   }
 
   return app;

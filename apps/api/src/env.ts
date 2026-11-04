@@ -7,8 +7,6 @@ const envSchema = z.object({
   DATA_MODE: z.enum(['mock', 'sheets', 'sqlite']).default('mock'),
   /** Fichier SQLite applicatif (défaut : <repo>/data/suivid.db). */
   DB_FILE: z.string().optional(),
-  /** 'off' désactive la synchro auto du catalogue Open Food Facts. */
-  OFF_SYNC: z.string().optional(),
   AUTH_SECRET: z.string().min(8).default('dev-secret-change-me-in-production!!'),
   /** Création de compte ouverte (true) ou désactivée (false). */
   ALLOW_SIGNUP: z

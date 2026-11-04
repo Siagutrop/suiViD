@@ -20,13 +20,6 @@ const cache = new Map<string, { at: number; data: AlimentExterne[] }>();
 let lastFailAt = 0;
 
 import { extractBrand, STOPWORDS } from './offShared.js';
-import type { OffDbStore } from './offDb.js';
-
-// Copie locale OFF — injectée au démarrage quand SQLite est actif.
-let local: OffDbStore | null = null;
-export function initLocalOff(store: OffDbStore | null): void {
-  local = store;
-}
 
 function brandTokens(brands: string): Set<string> {
   return new Set(
@@ -103,17 +96,6 @@ export async function searchOpenFoodFacts(q: string): Promise<AlimentExterne[]> 
 
   const isBarcode = /^\d{8,14}$/.test(key);
 
-  // Copie locale : instantanée et sans limite de débit. On ne descend
-  // en ligne que si elle ne contient rien (produit récent/rare).
-  if (local && local.count() > 0) {
-    if (isBarcode) {
-      const b = local.barcode(key);
-      if (b) return [b];
-    } else {
-      const hits = local.search(key);
-      if (hits.length > 0) return hits;
-    }
-  }
   let url: string;
   if (isBarcode) {
     url = `${BASE}/api/v0/product/${key}.json`;
