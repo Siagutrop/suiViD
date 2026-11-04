@@ -87,6 +87,13 @@ export const userSettingsSchema = z.object({
   reposDefautSec: z.number().int().min(0).max(3600),
   unite: z.literal('kg'),
   timezone: z.string().max(100),
+  // Champs également éditables côté coach — acceptés ici pour ne pas
+  // les effacer quand le client enregistre ses propres objectifs.
+  nomAffiche: z.string().max(80).nullable(),
+  tailleCm: z.number().min(50).max(300).nullable(),
+  dateNaissance: z.string().max(20).nullable(),
+  noteCoach: z.string().max(2000).nullable(),
+  joursSeance: z.array(z.number().int().min(0).max(6)).max(7),
 });
 
 export const emailSchema = z.string().trim().toLowerCase().email().max(200);
