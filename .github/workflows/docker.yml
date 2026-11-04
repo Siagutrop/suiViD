@@ -1,19 +1,11 @@
-# Build + push de l'image tout-en-un vers GHCR à chaque push sur main.
-# Image : ghcr.io/siagutrop/suivid:latest (+ tag par SHA de commit).
-#
-# Prérequis côté GitHub :
-#   - le workflow a besoin de « packages: write » (permission ci-dessous).
-#   - première publication : le package GHCR hérite des droits du repo ;
-#     pour une image publique → Packages → settings → Change visibility.
-#
-# Mise à jour sur le serveur :
-#   docker compose pull && docker compose up -d
 
-name: docker
+name: Docker suiViD
 
 on:
   push:
     branches: [main]
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 env:
@@ -22,9 +14,11 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -37,17 +31,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tags (latest + sha)
+      - name: Gestion des versions
         id: meta
-        run: |
-          {
-            echo "tags<<EOF"
-            echo "${IMAGE_NAME}:latest"
-            echo "${IMAGE_NAME}:sha-${{ github.sha }}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-        env:
-          IMAGE_NAME: ghcr.io/siagutrop/suivid
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,format=long,prefix=sha-
+            type=semver,pattern={{version}}
 
       - name: Build & push
         uses: docker/build-push-action@v6
@@ -56,5 +48,6 @@ jobs:
           file: docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
