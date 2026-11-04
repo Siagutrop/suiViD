@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  IMAGE_NAME: ghcr.io/siagutrop/suivid
 
 jobs:
   build:
@@ -47,7 +47,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
         env:
-          IMAGE_NAME: ghcr.io/${{ github.repository }}
+          IMAGE_NAME: ghcr.io/siagutrop/suivid
 
       - name: Build & push
         uses: docker/build-push-action@v6
