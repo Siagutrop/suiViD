@@ -15,3 +15,5 @@ dev-dist/
 apps/api/data/
 data/
 secrets/
+# Exception : les données de chemins SVG du muscle map font partie du code.
+!apps/web/src/vendor/musclemap/data/

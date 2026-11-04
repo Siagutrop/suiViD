@@ -2,6 +2,11 @@
 # node:XX-slim (glibc) requis : better-sqlite3 télécharge un binaire
 # natif précompilé — pas de prebuild musl pour Alpine.
 FROM node:20-slim AS build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Dépendances (cache par manifests)
@@ -20,6 +25,11 @@ RUN npm run build -w apps/api
 
 # ---------- Runtime ----------
 FROM node:20-slim AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 WORKDIR /app
 
