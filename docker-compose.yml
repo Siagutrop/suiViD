@@ -1,4 +1,4 @@
-# SuiViD — production
+# SuiViD — production, conteneur unique (API + front statique)
 #   docker compose up -d --build
 #   docker compose logs -f
 #   docker compose down
@@ -7,13 +7,16 @@
 # l'environnement du conteneur (Portainer : « Environment variables »).
 
 services:
-  api:
+  app:
+    # Image publiée par GitHub Actions (ghcr). Pour un build local à la
+    # place : docker compose up -d --build
+    image: ghcr.io/siagutrop/suivid:latest
     build:
       context: .
-      dockerfile: docker/Dockerfile.api
+      dockerfile: docker/Dockerfile
     restart: unless-stopped
     environment:
-      DATA_MODE: ${DATA_MODE:-sheets}
+      DATA_MODE: ${DATA_MODE:-sqlite}
       AUTH_SECRET: ${AUTH_SECRET:?definir AUTH_SECRET dans .env}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
       USERS_FILE: /data/users.json
@@ -25,43 +28,16 @@ services:
       HOST: 0.0.0.0
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      GOOGLE_SPREADSHEET_ID: ${GOOGLE_SPREADSHEET_ID:-}
-      GOOGLE_SERVICE_ACCOUNT_JSON: ${GOOGLE_SERVICE_ACCOUNT_JSON:-}
-      GOOGLE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_SERVICE_ACCOUNT_EMAIL:-}
-      GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY:-}
-      GOOGLE_SERVICE_ACCOUNT_FILE: ${GOOGLE_SERVICE_ACCOUNT_FILE:-}
-      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
-      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
-      GOOGLE_OAUTH_REFRESH_TOKEN: ${GOOGLE_OAUTH_REFRESH_TOKEN:-}
     volumes:
-      # Comptes utilisateurs (JSON) — persistant entre redéploiements.
+      # Base SQLite + comptes + photos + sauvegardes — tout persiste ici.
       - suivid-data:/data
-      # Pour utiliser un fichier de clé, ajouter un volume dans
-      # docker-compose.override.yml — voir docs/DEPLOIEMENT.md
-    expose:
-      - "3001"
+    ports:
+      - "${WEB_PORT:-8080}:3001"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/health"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
-    networks: [suivid]
-
-  web:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.web
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-    ports:
-      - "${WEB_PORT:-8080}:80"
-    networks: [suivid]
 
 volumes:
   suivid-data:
-
-networks:
-  suivid:
-    driver: bridge

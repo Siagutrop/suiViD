@@ -25,6 +25,8 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  /** Dossier du build web à servir en statique (déploiement tout-en-un). */
+  WEB_DIST: z.string().optional(),
 
   GOOGLE_SPREADSHEET_ID: z.string().optional(),
   GOOGLE_SERVICE_ACCOUNT_FILE: z.string().optional(),
