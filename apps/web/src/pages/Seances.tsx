@@ -1,10 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Archive, Clock, Copy, Dumbbell, History, Play, Plus } from 'lucide-react';
+import { Archive, CalendarDays, Clock, Copy, Dumbbell, History, Play, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useArchiveProgramme, useDuplicateProgramme, useProgrammes, useSeances } from '@/hooks/queries';
 import { formatDuration, formatShort, sessionCount } from '@/lib/session-utils';
 import { PageHeader } from '@/components/PageHeader';
+import { DispoSection } from '@/pages/Dispo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge, EmptyState, Skeleton } from '@/components/ui/misc';
@@ -20,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { useSaveProgramme } from '@/hooks/queries';
 import { useState } from 'react';
 import { ApiError } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 export function SeancesPage() {
   const { data: programmes, isLoading } = useProgrammes();
@@ -27,6 +29,7 @@ export function SeancesPage() {
   const navigate = useNavigate();
   const [newName, setNewName] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [tab, setTab] = useState<'seances' | 'dispo'>('seances');
   const save = useSaveProgramme();
 
   const actifs = (programmes ?? []).filter((p) => p.statut === 'actif');
@@ -75,6 +78,29 @@ export function SeancesPage() {
         }
       />
 
+      {/* Onglets Séances / Dispos salle */}
+      <div className="mb-4 flex gap-1 rounded-xl border border-line bg-bg-2/60 p-1">
+        {(
+          [
+            { id: 'seances', label: 'Mes séances', icon: Dumbbell },
+            { id: 'dispo', label: 'Dispos salle', icon: CalendarDays },
+          ] as const
+        ).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors sm:text-sm',
+              tab === id ? 'bg-accent text-white' : 'text-ink-2 hover:bg-bg-3',
+            )}
+          >
+            <Icon className="size-4" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'dispo' && <DispoSection />}
+      {tab === 'seances' && <>
       <section className="space-y-3">
         {isLoading && [1, 2].map((i) => <Skeleton key={i} className="h-28 w-full" />)}
         {!isLoading && actifs.length === 0 && (
@@ -118,6 +144,7 @@ export function SeancesPage() {
           ))}
         </CardContent>
       </Card>
+      </>}
     </div>
   );
 }
