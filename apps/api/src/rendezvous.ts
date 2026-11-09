@@ -67,9 +67,10 @@ export class RendezVousStore {
     };
   }
 
-  create(userId: string, input: RdvInput): RendezVous {
+  create(userId: string, input: RdvInput, today?: string): RendezVous {
     if (!DATE_RE.test(input.date)) throw new AppError(400, ERR.VALIDATION, 'Date invalide (YYYY-MM-DD)');
     if (!HEURE_RE.test(input.heure)) throw new AppError(400, ERR.VALIDATION, 'Heure invalide (HH:MM)');
+    if (today && input.date < today) throw new AppError(400, ERR.VALIDATION, 'Impossible de publier une dispo passée');
     const id = randomUUID();
     this.db
       .prepare('INSERT INTO rendez_vous (id, user_id, date, heure, lieu, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')

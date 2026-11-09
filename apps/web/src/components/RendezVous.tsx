@@ -5,6 +5,7 @@
 // ------------------------------------------------------------------
 
 import { useEffect, useState } from 'react';
+import { todayInTimezone } from '@suivi/shared';
 import { CalendarPlus, Clock, MapPin, Trash2, UserPlus, UserMinus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import type { RendezVous } from '@suivi/shared';
@@ -38,7 +39,7 @@ export function RdvLigne({
       <div className="flex items-center gap-3">
         <div className="flex size-10 shrink-0 flex-col items-center justify-center rounded-lg bg-accent/10 text-accent">
           <span className="text-[9px] font-bold uppercase leading-none">
-            {formatDateFr(rdv.date).split(' ')[1]?.slice(0, 4)}
+            {['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'][Number(rdv.date.slice(5, 7)) - 1]}
           </span>
           <span className="text-sm font-extrabold leading-tight">{rdv.date.slice(8)}</span>
         </div>
@@ -75,7 +76,7 @@ export function RdvLigne({
         </div>
       </div>
       {rdv.participants.length > 0 && (
-        <div className="mt-1.5 flex items-center gap-1.5 pl-13">
+        <div className="mt-1.5 flex items-center gap-1.5 pl-12">
           <Users className="size-3.5 shrink-0 text-ink-2" />
           <p className="truncate text-[11px] text-ink-2">{noms}</p>
           <Badge tone="accent">{rdv.participants.length}</Badge>
@@ -135,7 +136,7 @@ export function RdvDialog({ open, onClose, pending, onSubmit }: RdvDialogProps) 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-2">Date</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input type="date" min={todayInTimezone()} value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div>
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-2">Heure</label>

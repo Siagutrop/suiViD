@@ -661,7 +661,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   /** « Je suis dispo » : créneau visible par tous les clients. */
   app.post('/api/rendez-vous', async (req) => {
     const body = parse(rdvSchema, req.body);
-    return needRdv().create(req.userId!, body);
+    return needRdv().create(req.userId!, body, todayInTimezone());
   });
   app.post('/api/rendez-vous/:id/rejoindre', async (req) => {
     const { id } = req.params as { id: string };
