@@ -92,10 +92,12 @@ interface RdvDialogProps {
   onClose: () => void;
   pending: boolean;
   onSubmit: (input: RdvInput) => Promise<unknown>;
+  /** Date pré-remplie (ex. jour sélectionné dans le calendrier). */
+  initialDate?: string;
 }
 
 /** « Je suis dispo » — publication d'un créneau visible par les autres clients. */
-export function RdvDialog({ open, onClose, pending, onSubmit }: RdvDialogProps) {
+export function RdvDialog({ open, onClose, pending, onSubmit, initialDate }: RdvDialogProps) {
   const [date, setDate] = useState(todayInTimezone());
   const [heure, setHeure] = useState('18:00');
   const [lieu, setLieu] = useState('');
@@ -104,7 +106,7 @@ export function RdvDialog({ open, onClose, pending, onSubmit }: RdvDialogProps) 
 
   useEffect(() => {
     if (!open) return;
-    setDate(todayInTimezone());
+    setDate(initialDate ?? todayInTimezone());
     setDateInvalide(false);
     setHeure('18:00');
     setLieu('');

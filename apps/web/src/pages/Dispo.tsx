@@ -48,9 +48,11 @@ function MiniCal({ mois, parJour, jourSel, onSelect }: {
         ) : (
           <button
             key={d}
+            disabled={d < today}
             onClick={() => onSelect(jourSel === d ? null : d)}
             className={cn(
               'relative flex aspect-square flex-col items-center justify-center rounded-lg text-xs transition-colors',
+              d < today && 'opacity-30',
               d === today && 'font-extrabold text-accent ring-1 ring-accent/40',
               jourSel === d ? 'bg-accent text-white' : (parJour.get(d) ?? 0) > 0 ? 'bg-accent/10 font-bold' : 'text-ink-2 hover:bg-bg-3',
             )}
@@ -161,6 +163,7 @@ export function DispoSection() {
         open={dialog}
         onClose={() => setDialog(false)}
         pending={creer.isPending}
+        initialDate={jourSel ?? undefined}
         onSubmit={(i) => creer.mutateAsync(i)}
       />
     </div>
