@@ -15,6 +15,7 @@ import type { RdvInput } from '@/hooks/queries';
 import { Badge } from '@/components/ui/misc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateInput } from '@/components/ui/date-input';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 /** Ligne de créneau : date, heure, salle, créateur, participants + actions. */
@@ -95,22 +96,24 @@ interface RdvDialogProps {
 
 /** « Je suis dispo » — publication d'un créneau visible par les autres clients. */
 export function RdvDialog({ open, onClose, pending, onSubmit }: RdvDialogProps) {
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(todayInTimezone());
   const [heure, setHeure] = useState('18:00');
   const [lieu, setLieu] = useState('');
   const [note, setNote] = useState('');
+  const [dateInvalide, setDateInvalide] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setDate('');
+    setDate(todayInTimezone());
+    setDateInvalide(false);
     setHeure('18:00');
     setLieu('');
     setNote('');
   }, [open]);
 
   const submit = async () => {
-    if (!date || !heure) {
-      toast.error('Date et heure requises');
+    if (!date || !heure || date < todayInTimezone()) {
+      toast.error(dateInvalide ? 'Date invalide' : 'Choisis une date à venir');
       return;
     }
     try {
@@ -135,8 +138,8 @@ export function RdvDialog({ open, onClose, pending, onSubmit }: RdvDialogProps) 
         <div className="mt-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-2">Date</label>
-              <Input type="date" min={todayInTimezone()} value={date} onChange={(e) => setDate(e.target.value)} />
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-2">Date (jj/mm/aaaa)</label>
+              <DateInput value={date} onChange={setDate} invalid={setDateInvalide} />
             </div>
             <div>
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-2">Heure</label>
