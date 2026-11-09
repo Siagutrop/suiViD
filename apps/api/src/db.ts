@@ -112,7 +112,53 @@ export function openDb(file: string): Db {
     );
     CREATE INDEX IF NOT EXISTS idx_journal_commentaires ON journal_commentaires(user_id, date);
 
+    -- Rendez-vous entre clients (partenaires de salle) : un client
+    -- publie un créneau, les autres le rejoignent.
+    CREATE TABLE IF NOT EXISTS rendez_vous (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL,
+      date       TEXT NOT NULL,
+      heure      TEXT NOT NULL,
+      lieu       TEXT,
+      note       TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_rdv_date ON rendez_vous(date);
+    CREATE TABLE IF NOT EXISTS rendez_vous_participants (
+      rdv_id     TEXT NOT NULL REFERENCES rendez_vous(id) ON DELETE CASCADE,
+      user_id    TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (rdv_id, user_id)
+    );
+
   `);
+
+  // Migration : rendez_vous change de modèle (RDV entre clients,
+  // plus de type/statut/coach) — la version initiale n'a jamais
+  // été déployée, on recrée la table si l'ancien schéma est présent.
+  const rdvSql = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='rendez_vous'")
+    .get() as { sql: string } | undefined;
+  if (rdvSql && rdvSql.sql.includes('statut')) {
+    db.exec('DROP TABLE rendez_vous; DROP TABLE IF EXISTS rendez_vous_participants;');
+    db.exec(`
+      CREATE TABLE rendez_vous (
+        id         TEXT PRIMARY KEY,
+        user_id    TEXT NOT NULL,
+        date       TEXT NOT NULL,
+        heure      TEXT NOT NULL,
+        lieu       TEXT,
+        note       TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE TABLE rendez_vous_participants (
+        rdv_id     TEXT NOT NULL REFERENCES rendez_vous(id) ON DELETE CASCADE,
+        user_id    TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (rdv_id, user_id)
+      );
+    `);
+  }
 
   // Colonnes ajoutées après création initiale — l'ALTER échoue
   // silencieusement si la colonne existe déjà.

@@ -224,6 +224,28 @@ export interface Alerte {
   message: string;
 }
 
+// ------------------------------------------------------------------
+// Rendez-vous entre clients du même coach — « je vais à la salle X à
+// telle heure, qui vient ? ». Le coach n'intervient pas.
+// ------------------------------------------------------------------
+
+export interface RdvParticipant {
+  userId: string;
+  nom: string | null; // nom affiché, sinon début d'email
+}
+
+export interface RendezVous {
+  id: string;
+  userId: string; // créateur du créneau
+  createur: string | null;
+  date: string; // YYYY-MM-DD
+  heure: string; // HH:MM
+  lieu: string | null; // salle de sport
+  note: string | null;
+  participants: RdvParticipant[];
+  createdAt: string;
+}
+
 /** Ligne du tableau de bord coach — agrégats par client. */
 export interface DashboardClient {
   id: string;

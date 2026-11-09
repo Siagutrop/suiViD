@@ -22,6 +22,7 @@ import {
   type ApiMeta,
   type LinkSheetResult,
   type UserSettings,
+  todayInTimezone,
 } from '@suivi/shared';
 import { AuthService } from './auth.js';
 import type { Env } from './env.js';
@@ -46,6 +47,7 @@ import { SqliteProvider } from './providers/SqliteProvider.js';
 import { AlimentStore } from './aliments.js';
 import { ChampStore } from './champs.js';
 import { CommentaireStore } from './commentaires.js';
+import { RendezVousStore } from './rendezvous.js';
 import { autoBackup } from './backup.js';
 import { searchOpenFoodFacts } from './off.js';
 import { registerAdminRoutes } from './admin.js';
@@ -211,6 +213,18 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     const { status, body } = toApiError(err);
     if (status >= 500) app.log.error(err);
     void reply.status(status).send(body);
+  });
+
+  // Le front envoie Content-Type: application/json même sans corps
+  // (POST /rejoindre, etc.) — Fastify renvoie 500 sur un corps vide.
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    if (body === '' || body === undefined) return done(null, {});
+    try {
+      done(null, JSON.parse(body as string));
+    } catch (err) {
+      (err as { statusCode?: number }).statusCode = 400;
+      done(err as Error);
+    }
   });
 
   const PUBLIC_PATHS = new Set(['/api/health', '/api/auth/login', '/api/auth/signup']);
@@ -598,6 +612,70 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   app.delete('/api/journal/commentaires/:id', async (req) => {
     const { id } = req.params as { id: string };
     needCommentaires().remove(req.userId!, id, 'client');
+    return { ok: true };
+  });
+
+  // ---------- Rendez-vous entre clients (dispos salle partagée) ----------
+  const rdvStore = ctx.db ? new RendezVousStore(ctx.db) : null;
+  const needRdv = () => {
+    if (!rdvStore) throw new AppError(400, ERR.VALIDATION, 'Rendez-vous indisponibles hors mode SQLite');
+    return rdvStore;
+  };
+  const rdvSchema = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    heure: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    lieu: z.string().max(200).nullish(),
+    note: z.string().max(500).nullish(),
+  });
+
+  /** Nom d'affichage d'un utilisateur : nomAffiche des settings,
+   *  sinon début d'email. Cible les clients ayant un créneau. */
+  const nomDe = async (userId: string): Promise<string | null> => {
+    try {
+      const t = await ctx.forUser(userId);
+      const s = await t.settings.get();
+      if (s.nomAffiche) return s.nomAffiche;
+    } catch {
+      /* settings illisibles → fallback email */
+    }
+    const u = ctx.users.byId(userId);
+    return u?.email.split('@')[0] ?? null;
+  };
+
+  app.get('/api/rendez-vous', async (req) => {
+    const items = needRdv().listUpcoming(todayInTimezone());
+    const noms = new Map<string, string | null>();
+    const ids = new Set<string>();
+    for (const r of items) {
+      ids.add(r.userId);
+      r.participants.forEach((p) => ids.add(p.userId));
+    }
+    await Promise.all([...ids].map(async (id) => noms.set(id, await nomDe(id))));
+    return items.map((r) => ({
+      ...r,
+      createur: noms.get(r.userId) ?? null,
+      participants: r.participants.map((p) => ({ ...p, nom: noms.get(p.userId) ?? null })),
+    }));
+  });
+
+  /** « Je suis dispo » : créneau visible par tous les clients. */
+  app.post('/api/rendez-vous', async (req) => {
+    const body = parse(rdvSchema, req.body);
+    return needRdv().create(req.userId!, body);
+  });
+  app.post('/api/rendez-vous/:id/rejoindre', async (req) => {
+    const { id } = req.params as { id: string };
+    needRdv().join(id, req.userId!);
+    return { ok: true };
+  });
+  app.delete('/api/rendez-vous/:id/rejoindre', async (req) => {
+    const { id } = req.params as { id: string };
+    needRdv().leave(id, req.userId!);
+    return { ok: true };
+  });
+  app.delete('/api/rendez-vous/:id', async (req) => {
+    const { id } = req.params as { id: string };
+    needRdv().remove(id, req.userId!);
     return { ok: true };
   });
 

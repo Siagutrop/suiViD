@@ -18,6 +18,7 @@ import type {
   TodayResponse,
   UserSettings,
   Photo,
+  RendezVous,
 } from '@suivi/shared';
 import { addDays, todayInTimezone } from '@suivi/shared';
 import { api } from '@/lib/api';
@@ -679,5 +680,53 @@ export function useAdminDeleteCommentaire(userId: string) {
 export function useChangePassword() {
   return useMutation({
     mutationFn: (p: { actuel: string; nouveau: string }) => api.post<{ ok: boolean }>('/me/motdepasse', p),
+  });
+}
+
+// ---------- Rendez-vous entre clients (dispos salle partagée) ----------
+
+export interface RdvInput {
+  date: string;
+  heure: string;
+  lieu?: string | null;
+  note?: string | null;
+}
+
+export function useRendezVous() {
+  return useQuery({
+    queryKey: ['rendez-vous'] as const,
+    queryFn: () => api.get<RendezVous[]>('/rendez-vous'),
+  });
+}
+
+export function useCreerRdv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (p: RdvInput) => api.post<RendezVous>('/rendez-vous', p),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['rendez-vous'] }),
+  });
+}
+
+export function useRejoindreRdv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<{ ok: boolean }>(`/rendez-vous/${id}/rejoindre`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['rendez-vous'] }),
+  });
+}
+
+export function useQuitterRdv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ ok: boolean }>(`/rendez-vous/${id}/rejoindre`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['rendez-vous'] }),
+  });
+}
+
+export function useSupprimerRdv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ ok: boolean }>(`/rendez-vous/${id}`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['rendez-vous'] }),
   });
 }

@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import {
   BedDouble,
   Beef,
   CalendarCheck,
+  CalendarDays,
+  CalendarPlus,
   ChevronRight,
   Dumbbell,
   Flame,
@@ -21,10 +23,12 @@ import {
   TrendingDown,
   TrendingUp,
   Trophy,
+  X,
   Zap,
 } from 'lucide-react';
 import { seriesByDay, todayInTimezone } from '@suivi/shared';
-import { useJournalRange, useMe, useParametres, useProgrammes, useSeances, useToday } from '@/hooks/queries';
+import { useCreerRdv, useJournalRange, useMe, useParametres, useProgrammes, useQuitterRdv, useRejoindreRdv, useRendezVous, useSeances, useSupprimerRdv, useToday } from '@/hooks/queries';
+import { RdvDialog, RdvLigne } from '@/components/RendezVous';
 import { formatDateFr, formatKg, formatNum, formatShort, greeting } from '@/lib/utils';
 import { phraseDuJour } from '@/lib/phrases';
 import { computeBadges, getSeenBadges, markBadgesSeen, streakJours, type Badge } from '@/lib/rewards';
@@ -58,6 +62,12 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 export function AccueilPage() {
   const { data: today, isLoading } = useToday();
   const { data: me } = useMe();
+  const { data: rdvs } = useRendezVous();
+  const creerRdv = useCreerRdv();
+  const rejoindreRdv = useRejoindreRdv();
+  const quitterRdv = useQuitterRdv();
+  const supprimerRdv = useSupprimerRdv();
+  const [rdvDialog, setRdvDialog] = useState(false);
   const { data: settings } = useParametres();
   const { data: journal } = useJournalRange(60);
   const { data: programmes } = useProgrammes();
@@ -194,6 +204,41 @@ export function AccueilPage() {
           </Link>
         </motion.div>
       )}
+
+      {/* Dispos salle — partagées entre clients du même coach */}
+      <motion.div {...appear}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="size-4 text-accent" /> Dispos salle
+            </CardTitle>
+            <Button variant="ghost" size="sm" className="-mr-2 -mt-1" onClick={() => setRdvDialog(true)}>
+              <CalendarPlus className="size-4" /> Ma dispo
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(rdvs ?? []).length === 0 && (
+              <p className="text-xs text-ink-2">Personne n'a publié de dispo — sois le premier !</p>
+            )}
+            {(rdvs ?? []).slice(0, 4).map((r) => (
+              <RdvLigne
+                key={r.id}
+                rdv={r}
+                moiId={me?.id}
+                onRejoindre={(id) => rejoindreRdv.mutate(id)}
+                onQuitter={(id) => quitterRdv.mutate(id)}
+                onSupprimer={(id) => supprimerRdv.mutate(id)}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      </motion.div>
+      <RdvDialog
+        open={rdvDialog}
+        onClose={() => setRdvDialog(false)}
+        pending={creerRdv.isPending}
+        onSubmit={(i) => creerRdv.mutateAsync(i)}
+      />
 
       {/* Carte calories principale */}
       <motion.div {...appear} transition={{ delay: 0.03 }}>
