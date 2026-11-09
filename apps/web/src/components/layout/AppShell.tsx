@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Activity,
@@ -164,6 +165,33 @@ function BottomNav() {
 
 export function AppShell() {
   const location = useLocation();
+
+  // Textes trop longs : tout élément « truncate » défile en va-et-vient
+  // pour que tout le contenu reste lisible (mobile + PC).
+  useEffect(() => {
+    const wrap = (el: HTMLElement) => {
+      let inner = el.firstElementChild as HTMLElement | null;
+      if (!inner || !inner.classList.contains('truncate-inner')) {
+        inner = document.createElement('span');
+        inner.className = 'truncate-inner';
+        while (el.firstChild) inner.appendChild(el.firstChild);
+        el.appendChild(inner);
+      }
+      const dist = Math.max(0, inner.scrollWidth - el.clientWidth);
+      if (dist > 0) {
+        inner.style.setProperty('--scroll-dist', `-${dist}px`);
+        inner.style.animation = `scroll-x ${Math.min(12, Math.max(3.5, dist / 25))}s ease-in-out infinite alternate`;
+      } else {
+        inner.style.animation = '';
+      }
+    };
+    const scan = () => document.querySelectorAll<HTMLElement>('.truncate').forEach(wrap);
+    scan();
+    const mo = new MutationObserver(scan);
+    mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => mo.disconnect();
+  }, []);
+
   return (
     <div className="min-h-dvh">
       <DemoBanner />

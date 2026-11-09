@@ -239,3 +239,12 @@
 @media (prefers-reduced-motion: reduce) {
   .halo, .halo-slow, .halo-delay, .glow-breathe { animation: none; }
 }
+
+/* Texte défilant (ScrollText) : va-et-vient horizontal. */
+@keyframes scroll-x {
+  0%, 12% { transform: translateX(0); }
+  88%, 100% { transform: translateX(var(--scroll-dist, 0)); }
+}
+
+.truncate-inner { display: inline-block; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .truncate-inner { animation: none !important; } }
