@@ -83,17 +83,15 @@ test('empreinte : proposition, enregistrement, login par empreinte', async ({ pa
   expect(remaining).toBe(0);
 });
 
-// Test très court : la trace Playwright déclenche parfois un ENOENT à la
-// fermeture du contexte sous Windows — inutile et flaky ici.
-test.describe('empreinte : bouton masqué', () => {
-  test.use({ trace: 'off' });
+// La trace Playwright déclenche parfois un ENOENT à la fermeture du
+// contexte sous Windows — ces tests sont courts, on la désactive.
+test.use({ trace: 'off' });
 
-  test('pour un compte sans passkey', async ({ page }) => {
-    await addVirtualAuthenticator(page);
+test('empreinte : bouton masqué pour un compte sans passkey', async ({ page }) => {
+  await addVirtualAuthenticator(page);
 
-    await page.goto('/');
-    await page.getByPlaceholder('toi@exemple.fr').fill('inconnu@test.fr');
-    await page.waitForTimeout(1500); // debounce + requêtes du statut
-    await expect(fingerprintBtn(page)).toBeHidden();
-  });
+  await page.goto('/');
+  await page.getByPlaceholder('toi@exemple.fr').fill('inconnu@test.fr');
+  await page.waitForTimeout(1500); // debounce + requêtes du statut
+  await expect(fingerprintBtn(page)).toBeHidden();
 });
