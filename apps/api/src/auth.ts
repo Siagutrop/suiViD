@@ -31,7 +31,7 @@ export class AuthService {
     this.ttl = env.SESSION_TTL_SECONDS;
   }
 
-  private rateLimit(key: string) {
+  rateLimit(key: string) {
     const now = Date.now();
     const b = this.buckets.get(key);
     if (b && now < b.resetAt && b.count >= MAX_ATTEMPTS) {
@@ -66,6 +66,12 @@ export class AuthService {
       throw new AppError(403, ERR.UNAUTHORIZED, 'Compte désactivé — contacte ton coach');
     }
     return { ...(await this.issueToken(user.id)), user };
+  }
+
+  /** Émet un jeton après une assertion passkey vérifiée (même rate limit que login). */
+  async loginPasskey(user: UserRecord, ip = 'anon'): Promise<{ token: string; expiresIn: number }> {
+    this.rateLimit(`login:${ip}:${user.email}`);
+    return this.issueToken(user.id);
   }
 
   private async issueToken(userId: string): Promise<{ token: string; expiresIn: number }> {

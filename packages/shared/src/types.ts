@@ -128,6 +128,26 @@ export interface ApiMe {
   spreadsheetId: string | null;
   /** Email du compte de service à inviter sur le classeur (mode sheets). */
   serviceAccountEmail: string | null;
+  webauthn: { enabled: boolean };
+}
+
+/** Passkey WebAuthn enregistrée par un utilisateur (stockée dans users.json). */
+export interface PasskeyRecord {
+  id: string;
+  /** ID de la credential — base64url. */
+  credentialId: string;
+  /** Clé publique COSE — base64url. */
+  publicKey: string;
+  counter: number;
+  transports: string[];
+  createdAt: string; // ISO
+}
+
+/** Vue publique d'une passkey (GET /api/me/passkeys) — pas de clé. */
+export interface PasskeyInfo {
+  id: string;
+  createdAt: string;
+  transports: string[];
 }
 
 /** Résultat de POST /api/me/spreadsheet. */

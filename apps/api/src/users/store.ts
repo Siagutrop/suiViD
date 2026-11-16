@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Env } from '../env.js';
 import { AppError, ERR } from '../errors.js';
+import type { PasskeyRecord } from '@suivi/shared';
 
 // ------------------------------------------------------------------
 // Stockage des comptes utilisateurs — fichier JSON local.
@@ -21,6 +22,8 @@ export interface UserRecord {
   role: 'user' | 'coach';
   /** Compte désactivé par le coach — connexion et jetons refusés. */
   disabled?: boolean;
+  /** Passkeys WebAuthn enregistrées (empreinte / PIN appareil). */
+  passkeys?: PasskeyRecord[];
   createdAt: string;
 }
 
@@ -159,6 +162,31 @@ export class UserStore {
     u.spreadsheetId = spreadsheetId;
     await this.save();
     return u;
+  }
+
+  /** Ajoute ou met à jour (upsert par id) une passkey, puis persiste. */
+  async addPasskey(userId: string, rec: PasskeyRecord): Promise<UserRecord> {
+    const u = this.users.get(userId);
+    if (!u) throw new AppError(404, ERR.NOT_FOUND, 'Utilisateur introuvable');
+    const list = u.passkeys ?? [];
+    const idx = list.findIndex((p) => p.id === rec.id);
+    if (idx >= 0) list[idx] = rec;
+    else list.push(rec);
+    u.passkeys = list;
+    await this.save();
+    return u;
+  }
+
+  /** Retire une passkey par son id. Retourne true si elle existait. */
+  async removePasskey(userId: string, id: string): Promise<boolean> {
+    const u = this.users.get(userId);
+    if (!u) return false;
+    const list = u.passkeys ?? [];
+    const next = list.filter((p) => p.id !== id);
+    if (next.length === list.length) return false;
+    u.passkeys = next;
+    await this.save();
+    return true;
   }
 
   async persist(): Promise<void> {

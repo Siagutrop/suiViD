@@ -24,6 +24,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   HOST: z.string().default('0.0.0.0'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  /** WebAuthn : identifiant du relying party (défaut = host du 1er CORS_ORIGIN). */
+  WEBAUTHN_RP_ID: z.string().optional(),
+  /** Nom affiché dans la boîte de dialogue biométrique de l'OS. */
+  WEBAUTHN_RP_NAME: z.string().default('SuiViD'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   /** Dossier du build web à servir en statique (déploiement tout-en-un). */
   WEB_DIST: z.string().optional(),

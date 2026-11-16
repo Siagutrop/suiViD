@@ -108,6 +108,30 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
+// ---------- Passkeys / WebAuthn ----------
+// Le corps `response` (attestation ou assertion du navigateur) est
+// validé cryptographiquement par @simplewebauthn/server — on se
+// contente ici d'exiger un objet JSON.
+
+export const passkeyStatusSchema = z.object({
+  email: emailSchema,
+});
+
+export const passkeyAuthOptionsSchema = z.object({
+  email: emailSchema,
+});
+
+export const passkeyAuthVerifySchema = z.object({
+  email: emailSchema,
+  challengeId: z.string().min(8).max(100),
+  response: z.record(z.unknown()),
+});
+
+export const passkeyRegisterVerifySchema = z.object({
+  challengeId: z.string().min(8).max(100),
+  response: z.record(z.unknown()),
+});
+
 /** Lien ou identifiant brut d'un Google Sheets. */
 export const linkSheetSchema = z.object({
   url: z.string().trim().min(5).max(500),

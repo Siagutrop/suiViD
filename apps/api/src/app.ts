@@ -9,6 +9,10 @@ import {
   journalValuesSchema,
   linkSheetSchema,
   loginSchema,
+  passkeyAuthOptionsSchema,
+  passkeyAuthVerifySchema,
+  passkeyRegisterVerifySchema,
+  passkeyStatusSchema,
   programSchema,
   provisionSchema,
   signupSchema,
@@ -21,10 +25,13 @@ import {
   type ApiMe,
   type ApiMeta,
   type LinkSheetResult,
+  type PasskeyInfo,
   type UserSettings,
   todayInTimezone,
 } from '@suivi/shared';
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { AuthService } from './auth.js';
+import { WebAuthnService } from './webauthn.js';
 import type { Env } from './env.js';
 import { AppError, ERR, toApiError } from './errors.js';
 import { MockProvider } from './providers/MockProvider.js';
@@ -89,6 +96,8 @@ export interface AppContext {
   env: Env;
   users: UserStore;
   auth: AuthService;
+  /** Service WebAuthn / passkeys (config + challenges éphémères). */
+  webauthn: WebAuthnService;
   /** Contexte partagé du mode démo (un seul provider fictif). */
   mockCtx: DataCtx | null;
   /** Cache des contextes par spreadsheetId (mode sheets). */
@@ -163,6 +172,7 @@ export function buildContext(env: Env, provider?: DataProvider): AppContext {
     env,
     users,
     auth: new AuthService(env, users),
+    webauthn: new WebAuthnService(env),
     mockCtx,
     cache,
     db,
@@ -227,7 +237,14 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     }
   });
 
-  const PUBLIC_PATHS = new Set(['/api/health', '/api/auth/login', '/api/auth/signup']);
+  const PUBLIC_PATHS = new Set([
+    '/api/health',
+    '/api/auth/login',
+    '/api/auth/signup',
+    '/api/auth/passkey/exists',
+    '/api/auth/passkey/login/options',
+    '/api/auth/passkey/login/verify',
+  ]);
   app.addHook('onRequest', async (req) => {
     if (!req.url.startsWith('/api/')) return;
     if (PUBLIC_PATHS.has(req.url.split('?')[0]!)) return;
@@ -271,6 +288,90 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     return { token, expiresIn, email: user.email };
   });
 
+  // ---------- Passkeys (empreinte / FaceID / PIN appareil) ----------
+  // Le bouton « empreinte » du login ne s'affiche que si le compte en
+  // a une enregistrée : /exists l'indique sans révéler si le compte
+  // existe (même réponse pour un e-mail inconnu ou sans passkey).
+
+  app.post('/api/auth/passkey/exists', async (req) => {
+    const { email } = parse(passkeyStatusSchema, req.body);
+    ctx.auth.rateLimit(`pkexists:${req.ip}:${email}`);
+    const user = ctx.users.byEmail(email);
+    return {
+      enabled: ctx.webauthn.enabled,
+      exists:
+        ctx.webauthn.enabled &&
+        !!user &&
+        !user.disabled &&
+        (user.passkeys?.length ?? 0) > 0,
+    };
+  });
+
+  app.post('/api/auth/passkey/login/options', async (req) => {
+    const { email } = parse(passkeyAuthOptionsSchema, req.body);
+    const user = ctx.users.byEmail(email);
+    if (!user || !(user.passkeys?.length)) {
+      throw new AppError(404, ERR.NOT_FOUND, 'Aucune empreinte enregistrée pour ce compte');
+    }
+    if (user.disabled) {
+      throw new AppError(403, ERR.UNAUTHORIZED, 'Compte désactivé — contacte ton coach');
+    }
+    ctx.auth.rateLimit(`login:${req.ip}:${user.email}`);
+    return ctx.webauthn.authenticationOptions(req, user);
+  });
+
+  app.post('/api/auth/passkey/login/verify', async (req) => {
+    const { email, challengeId, response } = parse(passkeyAuthVerifySchema, req.body);
+    const user = ctx.users.byEmail(email);
+    if (!user || user.disabled) {
+      throw new AppError(401, ERR.UNAUTHORIZED, 'Empreinte refusée — utilisez votre mot de passe');
+    }
+    const updated = await ctx.webauthn.verifyAuthentication(
+      req,
+      challengeId,
+      user,
+      response as unknown as AuthenticationResponseJSON,
+    );
+    // Compteur anti-rejeu persisté sur la passkey.
+    await ctx.users.addPasskey(user.id, updated);
+    const { token, expiresIn } = await ctx.auth.loginPasskey(user, req.ip);
+    return { token, expiresIn, email: user.email };
+  });
+
+  app.post('/api/auth/passkey/register/options', async (req) => {
+    const user = ctx.users.byId(req.userId!);
+    if (!user) throw new AppError(401, ERR.UNAUTHORIZED, 'Compte introuvable');
+    return ctx.webauthn.registrationOptions(req, user);
+  });
+
+  app.post('/api/auth/passkey/register/verify', async (req): Promise<PasskeyInfo> => {
+    const { challengeId, response } = parse(passkeyRegisterVerifySchema, req.body);
+    const user = ctx.users.byId(req.userId!);
+    if (!user) throw new AppError(401, ERR.UNAUTHORIZED, 'Compte introuvable');
+    const rec = await ctx.webauthn.verifyRegistration(
+      req,
+      challengeId,
+      user,
+      response as unknown as RegistrationResponseJSON,
+    );
+    await ctx.users.addPasskey(user.id, rec);
+    return { id: rec.id, createdAt: rec.createdAt, transports: rec.transports };
+  });
+
+  app.get('/api/me/passkeys', async (req): Promise<PasskeyInfo[]> => {
+    const user = ctx.users.byId(req.userId!);
+    if (!user) throw new AppError(401, ERR.UNAUTHORIZED, 'Compte introuvable');
+    return (user.passkeys ?? []).map(({ id, createdAt, transports }) => ({ id, createdAt, transports }));
+  });
+
+  app.delete('/api/me/passkeys/:id', async (req) => {
+    const { id } = req.params as { id: string };
+    if (!(await ctx.users.removePasskey(req.userId!, id))) {
+      throw new AppError(404, ERR.NOT_FOUND, 'Empreinte introuvable');
+    }
+    return { ok: true };
+  });
+
   // ---------- Compte & liaison du classeur ----------
   app.get('/api/me', async (req): Promise<ApiMe> => {
     const user = ctx.users.byId(req.userId!);
@@ -286,6 +387,8 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       needsSetup: !user.spreadsheetId && ctx.env.DATA_MODE !== 'sqlite',
       spreadsheetId: maskId(user.spreadsheetId),
       serviceAccountEmail: serviceAccountEmail(ctx.env),
+      // WebAuthn disponible sur cette instance (rpID/origines configurés).
+      webauthn: { enabled: ctx.webauthn.enabled },
     };
   });
 
