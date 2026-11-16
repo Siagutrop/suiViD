@@ -5,6 +5,17 @@
 @tailwind utilities;
 
 /* ---------- Thèmes — appliqués via [data-theme] sur <html> ---------- */
+/* color-scheme : contrôles natifs (calendrier date, icône time) cohérents avec le thème. */
+:root,
+[data-theme='sombre'],
+[data-theme='bordeaux'] {
+  color-scheme: dark;
+}
+[data-theme='clair'],
+[data-theme='sable'] {
+  color-scheme: light;
+}
+
 :root,
 [data-theme='sombre'] {
   --bg: #090b10;

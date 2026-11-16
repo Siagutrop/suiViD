@@ -1,9 +1,12 @@
-// Champ de saisie de date au format français jj/mm/aaaa — le
-// navigateur force parfois mm/dd/yyyy avec type="date", source
-// d'erreurs. Tape les chiffres, les « / » s'insèrent tout seuls.
+// Champ de saisie de date. Sur tactile, le champ natif type="date"
+// ouvre le calendrier de l'OS au tap (affiché selon la locale de
+// l'appareil). Sur desktop, saisie masquée jj/mm/aaaa — tape les
+// chiffres, les « / » s'insèrent tout seuls.
 // Propriété value/onChange en ISO YYYY-MM-DD.
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
+
+const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const isoToFr = (iso: string): string => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
@@ -31,6 +34,21 @@ export function DateInput({
 } & Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange' | 'type'>) {
   const [txt, setTxt] = useState(isoToFr(value));
   useEffect(() => setTxt(isoToFr(value)), [value]);
+
+  // Téléphone/tablette : calendrier natif au premier tap.
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    return (
+      <Input
+        {...props}
+        type="date"
+        value={ISO_RE.test(value) ? value : ''}
+        onChange={(e) => {
+          onChange(e.target.value);
+          invalid?.(false);
+        }}
+      />
+    );
+  }
 
   return (
     <Input
