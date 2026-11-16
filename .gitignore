@@ -15,5 +15,8 @@ dev-dist/
 apps/api/data/
 data/
 secrets/
+# Scripts jetables de génération de tokens (dev)
+_tok.*
+tok.tmp.*
 # Exception : les données de chemins SVG du muscle map font partie du code.
 !apps/web/src/vendor/musclemap/data/

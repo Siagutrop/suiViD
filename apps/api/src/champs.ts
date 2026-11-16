@@ -40,7 +40,10 @@ export class ChampStore {
       .prepare('UPDATE champs_custom SET nom = ?, unite = ? WHERE id = ? AND user_id = ?')
       .run(input.nom, input.unite, id, userId);
     if (!r.changes) throw new AppError(404, ERR.NOT_FOUND, 'Champ introuvable');
-    return { id, nom: input.nom, unite: input.unite, ordre: 0 };
+    const row = this.db
+      .prepare('SELECT ordre FROM champs_custom WHERE id = ? AND user_id = ?')
+      .get(id, userId) as { ordre: number };
+    return { id, nom: input.nom, unite: input.unite, ordre: row.ordre };
   }
 
   remove(userId: string, id: string): void {

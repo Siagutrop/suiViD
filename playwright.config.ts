@@ -23,7 +23,7 @@ export default defineConfig({
       command: 'npm run dev:api',
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: true,
-      env: { DATA_MODE: 'mock', APP_PASSWORD: 'dev', AUTH_SECRET: 'e2e-secret-key-1234567890', LOG_LEVEL: 'error' },
+      env: { DATA_MODE: 'mock', AUTH_SECRET: 'e2e-secret-key-1234567890', LOG_LEVEL: 'error' },
       timeout: 60_000,
     },
     {

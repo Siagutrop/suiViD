@@ -57,6 +57,9 @@ COPY --from=build-api /app/apps/api/dist ./apps/api/dist
 COPY --from=build-web /app/apps/web/dist ./public
 
 ENV WEB_DIST=/app/public
+# Le volume nommé monté sur /data arrive root:root — le user node doit
+# pouvoir y écrire la base SQLite, users.json et les photos.
+RUN mkdir -p /data && chown node:node /data
 USER node
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
