@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, FileSpreadsheet, KeyRound, LogOut, Palette, PersonStanding, Save } from 'lucide-react';
+import { Check, FileSpreadsheet, Fingerprint, KeyRound, LogOut, Palette, PersonStanding, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LinkSheetResult, UserSettings } from '@suivi/shared';
-import { useParametres, useSaveParametres, useMeta, useMe, useChangePassword } from '@/hooks/queries';
+import { keys, useParametres, useSaveParametres, useMeta, useMe, useChangePassword, usePasskeys } from '@/hooks/queries';
 import { api, ApiError, setToken } from '@/lib/api';
+import { biometryAvailable, registerPasskey } from '@/lib/webauthn';
 import { applyTheme, getTheme, THEMES, type ThemeId } from '@/lib/theme';
 import { GENDERS, getBuild, setBuild, type BuildId } from '@/lib/body';
 import { BodyMap } from '@/components/BodyMap';
@@ -218,6 +219,89 @@ function MotDePasseCard() {
   );
 }
 
+/** Connexion par empreinte / FaceID — liste des passkeys du compte. */
+function PasskeysCard() {
+  const qc = useQueryClient();
+  const { data: me } = useMe();
+  const { data: passkeys, isLoading } = usePasskeys();
+  const [deviceOk, setDeviceOk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const refresh = () => void qc.invalidateQueries({ queryKey: keys.passkeys });
+
+  useEffect(() => {
+    void biometryAvailable().then(setDeviceOk);
+  }, []);
+
+  // WebAuthn non configuré côté serveur → section masquée.
+  if (!me?.webauthn.enabled) return null;
+
+  const add = async () => {
+    setBusy(true);
+    try {
+      await registerPasskey();
+      toast.success('Empreinte enregistrée');
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Enregistrement impossible');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    try {
+      await api.delete(`/me/passkeys/${id}`);
+      toast.success('Empreinte supprimée');
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Suppression impossible');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2"><Fingerprint className="size-5" /> Connexion par empreinte</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-12 w-full" />
+        ) : passkeys?.length ? (
+          <ul className="space-y-2">
+            {passkeys.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm font-bold">Empreinte enregistrée</p>
+                  <p className="text-xs text-ink-2">
+                    Ajoutée le {new Date(p.createdAt).toLocaleDateString('fr-FR')}
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => void remove(p.id)}>
+                  <Trash2 className="size-4" /> Retirer
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-ink-2">
+            Aucune empreinte enregistrée — ajoute celle de cet appareil pour te connecter sans mot de passe.
+          </p>
+        )}
+        {deviceOk ? (
+          <Button variant="secondary" onClick={() => void add()} loading={busy}>
+            <Fingerprint className="size-4" /> Ajouter cet appareil
+          </Button>
+        ) : (
+          <p className="text-[11px] text-ink-2">
+            Cet appareil ne propose pas d'empreinte, FaceID ou PIN biométrique.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ParametresPage() {
   const { data: settings, isLoading } = useParametres();
   const { data: meta } = useMeta();
@@ -276,6 +360,7 @@ export function ParametresPage() {
       <div className="mb-5 space-y-5">
         <CompteCard />
         <MotDePasseCard />
+        <PasskeysCard />
         <ThemeCard />
         <MorphoCard />
       </div>

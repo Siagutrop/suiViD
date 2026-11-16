@@ -8,6 +8,11 @@ test.beforeEach(async ({ page }) => {
   await page.getByPlaceholder('toi@exemple.fr').fill('demo@suivid.app');
   await page.getByPlaceholder('••••••••').fill('dev');
   await page.getByRole('button', { name: 'Se connecter' }).click();
+  // Proposition d'enregistrement d'empreinte éventuelle (une fois,
+  // appareils biométriques uniquement) : on la passe si elle apparaît.
+  const plusTard = page.getByRole('button', { name: 'Plus tard' });
+  await page.getByText('Calories du jour').or(plusTard).waitFor();
+  if (await plusTard.isVisible()) await plusTard.click();
   await expect(page.getByText('Calories du jour')).toBeVisible();
 });
 

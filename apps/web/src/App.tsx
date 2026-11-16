@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getToken } from '@/lib/api';
-import { useMe } from '@/hooks/queries';
+import { keys, useMe, usePasskeys } from '@/hooks/queries';
+import { biometryAvailable, markPasskeyOfferSeen, passkeyOfferSeen } from '@/lib/webauthn';
 import { AppShell } from '@/components/layout/AppShell';
 import { LoginPage } from '@/pages/Login';
 import { SetupPage } from '@/pages/Setup';
+import { PasskeyOfferPage } from '@/pages/PasskeyOffer';
 import { AccueilPage } from '@/pages/Accueil';
 import { JournalPage } from '@/pages/Journal';
 // [NUTRITION] désactivé — imports conservés pour réactivation.
@@ -35,7 +37,31 @@ function Splash() {
 
 function AuthedApp() {
   const { data: me, isLoading } = useMe();
+  const { data: passkeys } = usePasskeys();
   const qc = useQueryClient();
+  const [offer, setOffer] = useState(false);
+
+  // Enregistrement de l'empreinte proposé une seule fois : serveur
+  // WebAuthn actif, compte sans passkey, appareil biométrique, et
+  // proposition pas déjà déclinée pour ce compte sur cet appareil.
+  useEffect(() => {
+    let alive = true;
+    if (
+      me &&
+      !me.needsSetup &&
+      me.webauthn.enabled &&
+      passkeys &&
+      passkeys.length === 0 &&
+      !passkeyOfferSeen(me.id)
+    ) {
+      void biometryAvailable().then((ok) => {
+        if (alive && ok) setOffer(true);
+      });
+    }
+    return () => {
+      alive = false;
+    };
+  }, [me, passkeys]);
 
   if (isLoading) return <Splash />;
 
@@ -45,6 +71,18 @@ function AuthedApp() {
       <SetupPage
         me={me}
         onDone={() => void qc.invalidateQueries()}
+      />
+    );
+  }
+
+  if (me && offer) {
+    return (
+      <PasskeyOfferPage
+        onDone={() => {
+          markPasskeyOfferSeen(me.id);
+          setOffer(false);
+          void qc.invalidateQueries({ queryKey: keys.passkeys });
+        }}
       />
     );
   }

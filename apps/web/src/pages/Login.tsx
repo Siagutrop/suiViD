@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Mail, UserPlus } from 'lucide-react';
+import { Fingerprint, Lock, Mail, UserPlus } from 'lucide-react';
 import { api, setToken, ApiError } from '@/lib/api';
+import { biometryAvailable, loginWithPasskey, passkeyStatus } from '@/lib/webauthn';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -11,6 +12,27 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pkVisible, setPkVisible] = useState(false);
+  const [pkLoading, setPkLoading] = useState(false);
+
+  // Bouton « empreinte » visible seulement si l'appareil gère la
+  // biométrie ET que le compte saisi a une passkey enregistrée.
+  useEffect(() => {
+    let alive = true;
+    setPkVisible(false);
+    const e = email.trim();
+    if (!e.includes('@')) return;
+    const t = setTimeout(() => {
+      void (async () => {
+        const ok = (await biometryAvailable()) && (await passkeyStatus(e));
+        if (alive) setPkVisible(ok);
+      })();
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [email]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,6 +46,20 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
       setError(err instanceof ApiError ? err.message : 'Erreur de connexion');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fingerprint() {
+    setPkLoading(true);
+    setError(null);
+    try {
+      const { token } = await loginWithPasskey(email.trim());
+      setToken(token);
+      onLogin();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Empreinte annulée ou non reconnue');
+    } finally {
+      setPkLoading(false);
     }
   }
 
@@ -82,6 +118,20 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
           {mode === 'login' ? <Lock className="size-4" /> : <UserPlus className="size-4" />}
           {mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
         </Button>
+        {mode === 'login' && pkVisible && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            className="mt-3 w-full"
+            loading={pkLoading}
+            disabled={loading}
+            onClick={fingerprint}
+          >
+            <Fingerprint className="size-4" />
+            Connexion par empreinte
+          </Button>
+        )}
         <button
           type="button"
           onClick={() => {

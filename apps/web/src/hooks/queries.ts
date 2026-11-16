@@ -18,6 +18,7 @@ import type {
   TodayResponse,
   UserSettings,
   Photo,
+  PasskeyInfo,
   RendezVous,
 } from '@suivi/shared';
 import { addDays, todayInTimezone } from '@suivi/shared';
@@ -40,6 +41,7 @@ export const keys = {
   lastPerf: ['seances', 'last-perf'] as const,
   parametres: ['parametres'] as const,
   photos: ['photos'] as const,
+  passkeys: ['me', 'passkeys'] as const,
 };
 
 export function useMeta() {
@@ -48,6 +50,11 @@ export function useMeta() {
 
 export function useMe() {
   return useQuery({ queryKey: keys.me, queryFn: () => api.get<ApiMe>('/me'), staleTime: 60_000 });
+}
+
+/** Passkeys (empreintes) enregistrées sur le compte connecté. */
+export function usePasskeys() {
+  return useQuery({ queryKey: keys.passkeys, queryFn: () => api.get<PasskeyInfo[]>('/me/passkeys'), staleTime: 60_000 });
 }
 
 export function useToday() {
