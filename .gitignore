@@ -18,5 +18,7 @@ secrets/
 # Scripts jetables de génération de tokens (dev)
 _tok.*
 tok.tmp.*
+# Documentation de travail (specs, plans) — les docs suivis restent trackés
+docs/
 # Exception : les données de chemins SVG du muscle map font partie du code.
 !apps/web/src/vendor/musclemap/data/
