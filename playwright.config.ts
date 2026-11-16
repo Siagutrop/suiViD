@@ -5,7 +5,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
-  retries: 0,
+  // Sous Windows, la copie des traces à la fermeture du contexte échoue
+  // parfois (ENOENT interne) — un retry absorbe ce flake infrastructurel.
+  retries: 1,
   workers: 1,
   reporter: [['list']],
   use: {
