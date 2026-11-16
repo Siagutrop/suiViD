@@ -109,7 +109,11 @@ export class WebAuthnService {
         id: p.credentialId,
         transports: p.transports,
       })),
-      authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'required',
+        authenticatorAttachment: 'platform',
+      },
     });
     return { challengeId: this.stash(user.id, options.challenge), options };
   }

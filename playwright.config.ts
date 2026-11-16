@@ -23,7 +23,15 @@ export default defineConfig({
       command: 'npm run dev:api',
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: true,
-      env: { DATA_MODE: 'mock', AUTH_SECRET: 'e2e-secret-key-1234567890', LOG_LEVEL: 'error' },
+      // Fichiers isolés (gitignored) : compte démo seedé, aucune
+      // pollution de data/users.json ni du store mock réels.
+      env: {
+        DATA_MODE: 'mock',
+        AUTH_SECRET: 'e2e-secret-key-1234567890',
+        LOG_LEVEL: 'error',
+        USERS_FILE: 'data/e2e-users.json',
+        MOCK_STORE_FILE: 'data/e2e-mock.json',
+      },
       timeout: 60_000,
     },
     {
