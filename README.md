@@ -92,6 +92,24 @@ Application servie sur `http://<hôte>:8080` — voir
 [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) pour HTTPS / reverse proxy /
 Portainer.
 
+## Empreinte digitale (passkeys / WebAuthn)
+
+Connexion sans mot de passe via l'authentificateur de l'appareil
+(empreinte, FaceID, PIN Windows Hello…). Le mot de passe reste le
+secours.
+
+- Chaque appareil enregistre **sa** passkey : après la première
+  connexion, l'app propose une fois de l'activer (refusable, jamais
+  re-proposée) ; gérable ensuite dans **Paramètres → Connexion par
+  empreinte**.
+- Au login, le bouton « Empreinte » n'apparaît que si le compte a une
+  passkey **et** que l'appareil gère la biométrie.
+- **HTTPS obligatoire** hors `localhost` (contrainte WebAuthn) : en
+  prod, passer par le reverse proxy décrit dans DEPLOIEMENT.md.
+- `rpID` = `WEBAUTHN_RP_ID` ou hostname du 1er `CORS_ORIGIN` — si le
+  domaine change, les passkeys doivent être réenregistrées.
+- `CORS_ORIGIN=*` sans `WEBAUTHN_RP_ID` → fonction désactivée proprement.
+
 ## Structure
 
 ```

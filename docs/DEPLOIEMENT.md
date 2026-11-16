@@ -148,3 +148,4 @@ docker compose up -d` suffit.
 | `Onglets manquants` | provisionnement non exécuté |
 | `EACCES` / `SQLITE_CANTOPEN` sur `/data` | volume créé avant le fix permissions — recréer le volume ou `chown -R 1000:1000` dessus |
 | Page blanche / 502 | reverse proxy pointe sur le mauvais port — l'app écoute sur `PORT` (3001), exposé sur `WEB_PORT` (8080) |
+| Bouton « Empreinte » absent / `Empreinte digitale indisponible` | WebAuthn exige **HTTPS** hors localhost ; vérifier `WEBAUTHN_RP_ID` = domaine exact (sans `https://`) et `CORS_ORIGIN` sans `*` |
