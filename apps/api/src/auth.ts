@@ -16,7 +16,6 @@ interface RateBucket {
 }
 
 const WINDOW_MS = 5 * 60_000;
-const MAX_ATTEMPTS = 10;
 
 export class AuthService {
   private secret: Uint8Array;
@@ -34,7 +33,7 @@ export class AuthService {
   rateLimit(key: string) {
     const now = Date.now();
     const b = this.buckets.get(key);
-    if (b && now < b.resetAt && b.count >= MAX_ATTEMPTS) {
+    if (b && now < b.resetAt && b.count >= this.env.AUTH_RATE_LIMIT_MAX) {
       throw new AppError(429, ERR.VALIDATION, 'Trop de tentatives — réessayez dans quelques minutes');
     }
     if (!b || now >= b.resetAt) {

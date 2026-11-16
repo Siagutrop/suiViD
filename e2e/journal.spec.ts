@@ -10,10 +10,11 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: 'Se connecter' }).click();
   // Proposition d'enregistrement d'empreinte éventuelle (une fois,
   // appareils biométriques uniquement) : on la passe si elle apparaît.
+  const accueil = page.getByRole('heading', { name: 'Calories du jour' });
   const plusTard = page.getByRole('button', { name: 'Plus tard' });
-  await page.getByText('Calories du jour').or(plusTard).waitFor();
+  await accueil.or(plusTard).waitFor();
   if (await plusTard.isVisible()) await plusTard.click();
-  await expect(page.getByText('Calories du jour')).toBeVisible();
+  await expect(accueil).toBeVisible();
 });
 
 test('connexion + accueil affiche le cockpit', async ({ page }) => {
@@ -31,7 +32,7 @@ test('saisie du journal : remplir, enregistrer, persiste au rechargement', async
       ? { forme: '7', poids: '78.4', pas: String(uniq) }
       : { forme: '8', poids: '79.1', pas: String(uniq + 1) };
 
-  await page.getByRole('link', { name: 'Journal' }).click();
+  await page.getByRole('link', { name: 'Journal', exact: true }).first().click();
   await expect(page.getByText('Saisie du jour')).toBeVisible();
 
   await page.getByRole('button', { name: v.forme, exact: true }).click();
@@ -43,7 +44,7 @@ test('saisie du journal : remplir, enregistrer, persiste au rechargement', async
   await expect(page.getByText(/Journée enregistrée/)).toBeVisible();
 
   await page.reload();
-  await page.getByRole('link', { name: 'Journal' }).click();
+  await page.getByRole('link', { name: 'Journal', exact: true }).first().click();
   await expect(page.getByText('Saisie du jour')).toBeVisible();
   await expect(page.locator('input[name="poids"]')).toHaveValue(v.poids);
 });

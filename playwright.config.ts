@@ -20,7 +20,10 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run dev:api',
+      // tsx direct (pas "watch") : le process est tué proprement par
+      // Playwright — un enfant tsx watch orphelin conserverait le port
+      // et l'état (rate limiting, données) entre les exécutions.
+      command: 'npx tsx apps/api/src/index.ts',
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: true,
       // Fichiers isolés (gitignored) : compte démo seedé, aucune
@@ -31,6 +34,8 @@ export default defineConfig({
         LOG_LEVEL: 'error',
         USERS_FILE: 'data/e2e-users.json',
         MOCK_STORE_FILE: 'data/e2e-mock.json',
+        // Chaque test se connecte : lever la limite (10/5min) pour la suite.
+        AUTH_RATE_LIMIT_MAX: '500',
       },
       timeout: 60_000,
     },

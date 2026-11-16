@@ -21,6 +21,8 @@ const envSchema = z.object({
   COACH_EMAIL: z.string().email().optional(),
   COACH_PASSWORD: z.string().min(4).optional(),
   SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
+  /** Tentatives login/signup max par fenêtre de 5 min (défaut : 10). */
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
   PORT: z.coerce.number().int().positive().default(3001),
   HOST: z.string().default('0.0.0.0'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),

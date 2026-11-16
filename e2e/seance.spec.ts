@@ -10,10 +10,11 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: 'Se connecter' }).click();
   // Proposition d'enregistrement d'empreinte éventuelle (une fois,
   // appareils biométriques uniquement) : on la passe si elle apparaît.
+  const accueil = page.getByRole('heading', { name: 'Calories du jour' });
   const plusTard = page.getByRole('button', { name: 'Plus tard' });
-  await page.getByText('Calories du jour').or(plusTard).waitFor();
+  await accueil.or(plusTard).waitFor();
   if (await plusTard.isVisible()) await plusTard.click();
-  await expect(page.getByText('Calories du jour')).toBeVisible();
+  await expect(accueil).toBeVisible();
 });
 
 test('séance complète : démarrer, valider, recharger, terminer', async ({ page }) => {

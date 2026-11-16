@@ -4,6 +4,8 @@ import type { Page } from '@playwright/test';
 // Connexion par empreinte (WebAuthn) vérifiée de bout en bout avec un
 // authentificateur virtuel Chrome : proposition post-login (une fois),
 // enregistrement, bouton conditionnel, connexion par empreinte.
+// Le compte démo est utilisé (pas de signup → pas de rate limiting) ;
+// la passkey créée est retirée en fin de test pour la répétabilité.
 
 async function addVirtualAuthenticator(page: Page) {
   const client = await page.context().newCDPSession(page);
@@ -20,70 +22,78 @@ async function addVirtualAuthenticator(page: Page) {
   });
 }
 
+async function logout(page: Page) {
+  await page.evaluate(() => {
+    localStorage.removeItem('suivid.token');
+    location.reload();
+  });
+}
+
+const accueil = (page: Page) => page.getByRole('heading', { name: 'Calories du jour' });
 const fingerprintBtn = (page: Page) =>
   page.getByRole('button', { name: 'Connexion par empreinte' });
 
-test('empreinte : proposition après connexion, enregistrement, login par empreinte', async ({
-  page,
-}) => {
+/** Supprime toutes les passkeys du compte connecté via l'API. */
+async function purgePasskeys(page: Page) {
+  await page.evaluate(async () => {
+    const h = { authorization: `Bearer ${localStorage.getItem('suivid.token')}` };
+    const list = (await (await fetch('/api/me/passkeys', { headers: h })).json()) as { id: string }[];
+    for (const p of list) {
+      await fetch(`/api/me/passkeys/${p.id}`, { method: 'DELETE', headers: h });
+    }
+  });
+}
+
+test('empreinte : proposition, enregistrement, login par empreinte', async ({ page }) => {
   await addVirtualAuthenticator(page);
-  const email = `pk-e2e-${Date.now()}@test.fr`;
 
   await page.goto('/');
-  await page.getByRole('button', { name: "Pas de compte ? S'inscrire" }).click();
-  await page.getByPlaceholder('toi@exemple.fr').fill(email);
-  await page.getByPlaceholder('••••••••').fill('pass1234');
-  await page.getByRole('button', { name: 'Créer mon compte' }).click();
+  await page.getByPlaceholder('toi@exemple.fr').fill('demo@suivid.app');
+  await page.getByPlaceholder('••••••••').fill('dev');
+  await page.getByRole('button', { name: 'Se connecter' }).click();
 
-  // Setup initial éventuel (mode mock : liaison simulée).
-  const skipSetup = page.getByRole('button', { name: 'Passer cette étape (mode démo)' });
-  await skipSetup.or(page.getByText('Connexion plus rapide')).waitFor();
-  if (await skipSetup.isVisible()) {
-    await skipSetup.click();
-    await page.getByRole('button', { name: "Accéder à l'application" }).click();
+  // La proposition s'affiche après la connexion (une seule fois) si le
+  // compte n'a pas de passkey. Sinon (reliquat d'un run interrompu)
+  // on arrive à l'accueil : on purge les passkeys serveur et on
+  // recharge pour revoir la proposition.
+  const offer = page.getByText('Connexion plus rapide');
+  await offer.or(accueil(page)).waitFor();
+  if (!(await offer.isVisible())) {
+    await purgePasskeys(page);
+    await page.reload();
+    await expect(offer).toBeVisible();
   }
-
-  // La page de proposition s'affiche après la première connexion.
-  await expect(page.getByText('Connexion plus rapide')).toBeVisible();
   await page.getByRole('button', { name: "Activer l'empreinte" }).click();
-  await expect(page.getByText('Calories du jour')).toBeVisible();
+  await expect(accueil(page)).toBeVisible();
 
-  // Déconnexion → le bouton empreinte apparaît car le compte est configuré.
-  await page.evaluate(() => {
-    localStorage.removeItem('suivid.token');
-    location.reload();
-  });
-  await page.getByPlaceholder('toi@exemple.fr').fill(email);
+  // Connexion par empreinte : bouton visible car le compte est configuré.
+  await logout(page);
+  await page.getByPlaceholder('toi@exemple.fr').fill('demo@suivid.app');
   await expect(fingerprintBtn(page)).toBeVisible();
   await fingerprintBtn(page).click();
-  await expect(page.getByText('Calories du jour')).toBeVisible();
+  await expect(accueil(page)).toBeVisible();
+
+  // Nettoyage : purge toutes les passkeys via l'API pour que le
+  // prochain run retrouve l'état initial.
+  await purgePasskeys(page);
+  const remaining = await page.evaluate(async () => {
+    const h = { authorization: `Bearer ${localStorage.getItem('suivid.token')}` };
+    return ((await (await fetch('/api/me/passkeys', { headers: h })).json()) as unknown[]).length;
+  });
+  expect(remaining).toBe(0);
 });
 
-test('empreinte : bouton masqué pour un compte sans passkey', async ({ page }) => {
-  await addVirtualAuthenticator(page);
-  const email = `pk-none-${Date.now()}@test.fr`;
+// Test très court : la trace Playwright déclenche parfois un ENOENT à la
+// fermeture du contexte sous Windows — inutile et flaky ici.
+test.describe('empreinte : bouton masqué', () => {
+  test.use({ trace: 'off' });
 
-  await page.goto('/');
-  await page.getByRole('button', { name: "Pas de compte ? S'inscrire" }).click();
-  await page.getByPlaceholder('toi@exemple.fr').fill(email);
-  await page.getByPlaceholder('••••••••').fill('pass1234');
-  await page.getByRole('button', { name: 'Créer mon compte' }).click();
+  test('pour un compte sans passkey', async ({ page }) => {
+    await addVirtualAuthenticator(page);
 
-  // Passer la proposition d'enregistrement pour revenir au login.
-  const skipSetup = page.getByRole('button', { name: 'Passer cette étape (mode démo)' });
-  await skipSetup.or(page.getByText('Connexion plus rapide')).waitFor();
-  if (await skipSetup.isVisible()) {
-    await skipSetup.click();
-    await page.getByRole('button', { name: "Accéder à l'application" }).click();
-  }
-  await page.getByRole('button', { name: 'Plus tard' }).click();
-  await expect(page.getByText('Calories du jour')).toBeVisible();
-
-  await page.evaluate(() => {
-    localStorage.removeItem('suivid.token');
-    location.reload();
+    await page.goto('/');
+    await page.getByPlaceholder('toi@exemple.fr').fill('inconnu@test.fr');
+    await page.waitForTimeout(1500); // debounce + requêtes du statut
+    await expect(fingerprintBtn(page)).toBeHidden();
   });
-  await page.getByPlaceholder('toi@exemple.fr').fill(email);
-  await page.waitForTimeout(900); // debounce de vérification du statut
-  await expect(fingerprintBtn(page)).toBeHidden();
 });
