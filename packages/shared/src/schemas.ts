@@ -44,6 +44,14 @@ export const programExerciseSchema = z.object({
   reposSec: z.number().int().min(0).max(3600).nullable().optional(),
 });
 
+/** Exercice personnel (onglet ExosPerso) — création / édition. */
+export const persoExerciseSchema = z.object({
+  nom: z.string().min(1).max(200),
+  muscle: z.string().min(1).max(100),
+  tag: z.string().max(50).nullable().optional(),
+  videoUrl: z.string().max(500).nullable().optional(),
+});
+
 export const programSchema = z.object({
   nom: z.string().min(1).max(100),
   statut: z.enum(['actif', 'archive']).optional(),

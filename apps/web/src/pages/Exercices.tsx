@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Play, Search, VideoOff } from 'lucide-react';
+import { Pencil, Play, Plus, Search, Trash2, VideoOff } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Exercise } from '@suivi/shared';
-import { useExercices, useLastPerf } from '@/hooks/queries';
+import { useDeleteExercice, useExercices, useLastPerf } from '@/hooks/queries';
+import { ApiError } from '@/lib/api';
 import { cn, formatKg, youtubeId } from '@/lib/utils';
 import { getBuild } from '@/lib/body';
 import { BodyMap } from '@/components/BodyMap';
+import { ExoPersoDialog } from '@/components/ExoPersoDialog';
 import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge, EmptyState, Skeleton } from '@/components/ui/misc';
 import {
@@ -18,9 +22,14 @@ import {
 export function ExercicesPage() {
   const { data: exercices, isLoading } = useExercices();
   const { data: lastPerf } = useLastPerf();
+  const del = useDeleteExercice();
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState<string>('tous');
   const [selected, setSelected] = useState<Exercise | null>(null);
+  const [form, setForm] = useState<{ open: boolean; initial: Exercise | null }>({
+    open: false,
+    initial: null,
+  });
 
   const muscles = useMemo(
     () => ['tous', ...new Set((exercices ?? []).map((e) => e.muscle)).values()].sort((a, b) => (a === 'tous' ? -1 : a.localeCompare(b))),
@@ -30,13 +39,33 @@ export function ExercicesPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (exercices ?? []).filter(
-      (e) => (muscle === 'tous' || e.muscle === muscle) && (!q || e.nom.toLowerCase().includes(q)),
+      (e) =>
+        (muscle === 'tous' || e.muscle === muscle) &&
+        (!q || e.nom.toLowerCase().includes(q) || (e.tag ?? '').toLowerCase().includes(q)),
     );
   }, [exercices, search, muscle]);
 
+  const supprimer = async (nom: string) => {
+    try {
+      await del.mutateAsync(nom);
+      setSelected(null);
+      toast.success('Exercice supprimé');
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Suppression impossible');
+    }
+  };
+
   return (
     <div>
-      <PageHeader title="Exercices" subtitle={`${exercices?.length ?? '…'} mouvements — bibliothèque`} />
+      <PageHeader
+        title="Exercices"
+        subtitle={`${exercices?.length ?? '…'} mouvements — bibliothèque`}
+        actions={
+          <Button size="sm" onClick={() => setForm({ open: true, initial: null })}>
+            <Plus className="size-4" /> Nouvel exo
+          </Button>
+        }
+      />
 
       {/* Recherche + filtres */}
       <div className="sticky top-0 z-20 -mx-4 mb-4 bg-bg/90 px-4 pb-3 pt-2 backdrop-blur-xl">
@@ -94,9 +123,16 @@ export function ExercicesPage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold">{e.nom}</p>
-              <p className="mt-0.5 text-xs text-ink-2">{e.muscle}</p>
+              <p className="mt-0.5 truncate text-xs text-ink-2">
+                {e.muscle}
+                {e.tag ? ` · ${e.tag}` : ''}
+              </p>
             </div>
-            <Badge tone="default">{e.muscle.slice(0, 4)}</Badge>
+            {e.perso ? (
+              <Badge tone="accent">Perso</Badge>
+            ) : (
+              <Badge tone="default">{e.muscle.slice(0, 4)}</Badge>
+            )}
           </motion.button>
         ))}
       </div>
@@ -108,10 +144,33 @@ export function ExercicesPage() {
             <>
               <div className="px-6 pt-6">
                 <DialogTitle className="pr-8">{selected.nom}</DialogTitle>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge tone="violet">{selected.muscle}</Badge>
+                  {selected.tag && <Badge>{selected.tag}</Badge>}
+                  {selected.perso && <Badge tone="accent">Perso</Badge>}
                   {selected.videoUrl && <Badge tone="accent">Vidéo</Badge>}
                 </div>
+                {selected.perso && (
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setForm({ open: true, initial: selected })}
+                    >
+                      <Pencil className="size-4" /> Modifier
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 text-danger"
+                      disabled={del.isPending}
+                      onClick={() => supprimer(selected.nom)}
+                    >
+                      <Trash2 className="size-4" /> Supprimer
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="p-6 pt-4">
                 {/* Muscles travaillés — silhouette avant/dos */}
@@ -164,6 +223,15 @@ export function ExercicesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Création / édition d'exercice perso */}
+      <ExoPersoDialog
+        open={form.open}
+        onOpenChange={(o) => setForm((f) => ({ ...f, open: o }))}
+        muscles={muscles.filter((m) => m !== 'tous')}
+        initial={form.initial}
+        onSaved={(e) => setSelected((s) => (s?.perso ? e : s))}
+      />
     </div>
   );
 }

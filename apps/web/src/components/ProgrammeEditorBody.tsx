@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Exercise, ProgramExercise } from '@suivi/shared';
+import { ExoPersoDialog } from '@/components/ExoPersoDialog';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -48,6 +49,7 @@ export function ProgrammeEditorBody({
   dirty: boolean;
 }) {
   const [addOpen, setAddOpen] = useState(false);
+  const [persoOpen, setPersoOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState<string>('tous');
 
@@ -156,7 +158,7 @@ export function ProgrammeEditorBody({
         </DialogTrigger>
         <DialogContent className="max-h-[80dvh]">
           <DialogTitle>Ajouter un exercice</DialogTitle>
-          <DialogDescription>Depuis la bibliothèque de l'onglet Liste.</DialogDescription>
+          <DialogDescription>Bibliothèque du coach + tes exercices perso.</DialogDescription>
           <div className="mt-4 flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-2" />
@@ -190,13 +192,35 @@ export function ProgrammeEditorBody({
                   )}
                 >
                   <span className="truncate">{e.nom}</span>
-                  {already ? <Check className="size-4 shrink-0 text-success" /> : <Badge tone="violet">{e.muscle}</Badge>}
+                  {already ? (
+                    <Check className="size-4 shrink-0 text-success" />
+                  ) : e.perso ? (
+                    <Badge tone="accent">Perso</Badge>
+                  ) : (
+                    <Badge tone="violet">{e.muscle}</Badge>
+                  )}
                 </button>
               );
             })}
           </div>
+          <div className="mt-4 border-t border-line/60 pt-3">
+            <Button variant="secondary" className="w-full" onClick={() => setPersoOpen(true)}>
+              <Plus className="size-4" /> Créer un exercice perso
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
+
+      <ExoPersoDialog
+        open={persoOpen}
+        onOpenChange={setPersoOpen}
+        muscles={muscles.filter((m) => m !== 'tous')}
+        onSaved={(e) => {
+          onMutate((l) => [...l, { exercice: e.nom, series: 3, repsCible: '8-12', variante: null, notes: null, reposSec: null }]);
+          toast.success(`${e.nom} ajouté au programme`);
+          setAddOpen(false);
+        }}
+      />
 
       {dirty && (
         <p className="mt-4 flex items-center gap-2 text-xs text-warn">

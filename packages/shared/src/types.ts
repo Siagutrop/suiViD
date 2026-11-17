@@ -25,6 +25,10 @@ export interface Exercise {
   nom: string;
   muscle: string;
   videoUrl: string | null;
+  /** Tag libre saisi par l'utilisateur (exos perso uniquement). */
+  tag?: string | null;
+  /** true = exercice créé par l'utilisateur (onglet ExosPerso), éditable. */
+  perso?: boolean;
 }
 
 export interface ProgramExercise {

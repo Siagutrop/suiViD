@@ -13,6 +13,7 @@ import {
   passkeyAuthVerifySchema,
   passkeyRegisterVerifySchema,
   passkeyStatusSchema,
+  persoExerciseSchema,
   programSchema,
   provisionSchema,
   signupSchema,
@@ -494,6 +495,27 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
 
   // ---------- Exercices ----------
   app.get('/api/exercices', async (req) => (await u(req)).exercises.list());
+
+  // Exercices personnels (onglet ExosPerso, privé à l'utilisateur).
+  const persoInput = (body: { nom: string; muscle: string; tag?: string | null; videoUrl?: string | null }) => ({
+    nom: body.nom,
+    muscle: body.muscle,
+    tag: body.tag ?? null,
+    videoUrl: body.videoUrl ?? null,
+  });
+  app.post('/api/exercices', async (req) => {
+    const body = parse(persoExerciseSchema, req.body);
+    return (await u(req)).exercises.createPerso(persoInput(body));
+  });
+  app.put('/api/exercices/:nom', async (req) => {
+    const body = parse(persoExerciseSchema, req.body);
+    const nom = decodeURIComponent((req.params as { nom: string }).nom);
+    return (await u(req)).exercises.updatePerso(nom, persoInput(body));
+  });
+  app.delete('/api/exercices/:nom', async (req) => {
+    const nom = decodeURIComponent((req.params as { nom: string }).nom);
+    return (await u(req)).exercises.removePerso(nom);
+  });
 
   // ---------- Programmes ----------
   app.get('/api/programmes', async (req) => (await u(req)).programs.list());

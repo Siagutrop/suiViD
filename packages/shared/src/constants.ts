@@ -19,6 +19,8 @@ export const SHEET_PROGRAMME_EXERCICES = 'ProgrammeExercices';
 export const SHEET_SEANCES = 'Seances';
 export const SHEET_SEANCE_SERIES = 'SeanceSeries';
 export const SHEET_PARAMETRES = 'Parametres';
+/** Exercices personnels de l'utilisateur : Nom | Muscle | Tag | Lien vidéo. */
+export const SHEET_EXOS_PERSO = 'ExosPerso';
 
 /** Onglets requis pour l'écriture applicative (hors Suivi/Liste existants). */
 export const REQUIRED_NEW_TABS = [
@@ -84,4 +86,5 @@ export const WRITABLE_SHEETS = [
   SHEET_SEANCES,
   SHEET_SEANCE_SERIES,
   SHEET_PARAMETRES,
+  SHEET_EXOS_PERSO,
 ] as const;

@@ -135,6 +135,38 @@ export function useFinishSession() {
   });
 }
 
+export interface ExoPersoInput {
+  nom: string;
+  muscle: string;
+  tag?: string | null;
+  videoUrl?: string | null;
+}
+
+export function useCreateExercice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ExoPersoInput) => api.post<Exercise>('/exercices', body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.exercices }),
+  });
+}
+
+export function useUpdateExercice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ originalNom, ...body }: ExoPersoInput & { originalNom: string }) =>
+      api.put<Exercise>(`/exercices/${encodeURIComponent(originalNom)}`, body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.exercices }),
+  });
+}
+
+export function useDeleteExercice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (nom: string) => api.delete<{ ok: true }>(`/exercices/${encodeURIComponent(nom)}`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.exercices }),
+  });
+}
+
 export function useSaveProgramme() {
   const qc = useQueryClient();
   return useMutation({
