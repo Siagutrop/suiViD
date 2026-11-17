@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, FileSpreadsheet, Fingerprint, KeyRound, LogOut, Palette, PersonStanding, Save, Trash2 } from 'lucide-react';
+import { Bell, BellOff, Check, FileSpreadsheet, Fingerprint, KeyRound, LogOut, Palette, PersonStanding, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LinkSheetResult, UserSettings } from '@suivi/shared';
-import { keys, useParametres, useSaveParametres, useMeta, useMe, useChangePassword, usePasskeys } from '@/hooks/queries';
+import { keys, useParametres, useSaveParametres, useMeta, useMe, useChangePassword, usePasskeys, usePushStatus, useSubscribePush, useUnsubscribePush } from '@/hooks/queries';
 import { api, ApiError, setToken } from '@/lib/api';
+import { pushPermission, pushSupported } from '@/lib/push';
 import { biometryAvailable, registerPasskey } from '@/lib/webauthn';
 import { applyTheme, getTheme, THEMES, type ThemeId } from '@/lib/theme';
+import { APP_VERSION } from '@/lib/version';
 import { GENDERS, getBuild, setBuild, type BuildId } from '@/lib/body';
 import { BodyMap } from '@/components/BodyMap';
 import { PageHeader } from '@/components/PageHeader';
@@ -302,6 +304,83 @@ function PasskeysCard() {
   );
 }
 
+/** Rappels de séance : notification push les jours d'entraînement planifiés. */
+function RappelsCard() {
+  const { data: push, isLoading } = usePushStatus();
+  const subscribe = useSubscribePush();
+  const unsubscribe = useUnsubscribePush();
+  const [local, setLocal] = useState<boolean | null>(null);
+  const supported = pushSupported();
+
+  // L'état réel de CET appareil (le serveur agrège tous les appareils).
+  useEffect(() => {
+    if (!supported) {
+      setLocal(false);
+      return;
+    }
+    void navigator.serviceWorker
+      .getRegistration()
+      .then((r) => r?.pushManager.getSubscription())
+      .then((s) => setLocal(!!s))
+      .catch(() => setLocal(false));
+  }, [supported, push?.subscribed]);
+
+  // VAPID non configuré côté serveur → section masquée.
+  if (push && !push.enabled) return null;
+
+  const toggle = async () => {
+    try {
+      if (local) {
+        await unsubscribe.mutateAsync();
+        setLocal(false);
+        toast.success('Rappels désactivés sur cet appareil');
+      } else {
+        await subscribe.mutateAsync(push!.publicKey!);
+        setLocal(true);
+        toast.success('Rappels activés sur cet appareil');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Action impossible');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="size-5" /> Rappels de séance</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-12 w-full" />
+        ) : !supported ? (
+          <p className="text-sm text-ink-2">Les notifications ne sont pas supportées par ce navigateur.</p>
+        ) : pushPermission() === 'denied' ? (
+          <p className="text-sm text-warn">
+            Notifications bloquées par le navigateur — autorise-les dans les réglages du site pour recevoir les rappels.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm text-ink-2">
+              Reçois une notification vers {push?.hour ?? 18}h les jours d'entraînement planifiés
+              (sauf si la séance est déjà faite).
+            </p>
+            <Button
+              variant={local ? 'secondary' : 'default'}
+              onClick={() => void toggle()}
+              loading={subscribe.isPending || unsubscribe.isPending}
+              disabled={local === null}
+            >
+              {local ? (
+                <><BellOff className="size-4" /> Désactiver sur cet appareil</>
+              ) : (
+                <><Bell className="size-4" /> Activer les rappels</>
+              )}
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ParametresPage() {
   const { data: settings, isLoading } = useParametres();
   const { data: meta } = useMeta();
@@ -361,6 +440,7 @@ export function ParametresPage() {
         <CompteCard />
         <MotDePasseCard />
         <PasskeysCard />
+        <RappelsCard />
         <ThemeCard />
         <MorphoCard />
       </div>
@@ -396,9 +476,12 @@ export function ParametresPage() {
           <Card className="border-line bg-bg-2/50">
             <CardContent className="flex items-center justify-between p-4 text-xs text-ink-2">
               <span>
-                Mode : <strong className={meta?.mode === 'mock' ? 'text-warn' : 'text-success'}>{meta?.mode === 'mock' ? 'Démo (données fictives)' : 'Google Sheets'}</strong>
+                Mode : <strong className={meta?.mode === 'mock' ? 'text-warn' : 'text-success'}>{meta?.mode === 'mock' ? 'Démo (données fictives)' : meta?.mode === 'sqlite' ? 'Locale (SQLite)' : 'Google Sheets'}</strong>
               </span>
-              <span>Unité : kg · kg×reps pour le volume</span>
+              <span>
+                SuiViD v{APP_VERSION}
+                {meta?.version ? ` · API v${meta.version}` : ''} · Unité kg
+              </span>
             </CardContent>
           </Card>
           <Button type="submit" size="lg" className="w-full lg:w-auto" loading={save.isPending}>

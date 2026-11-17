@@ -8,6 +8,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Service worker custom : précache + handlers push (rappels).
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      // SW actif aussi en dev — sinon le push n'est pas testable localement.
+      devOptions: { enabled: true },
       includeAssets: ['favicon-32.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'SuiViD — Suivi sportif & nutrition',
@@ -24,9 +30,9 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
-        // L'API n'est jamais mise en cache — données toujours fraîches.
-        navigateFallbackDenylist: [/^\/api/],
+      injectManifest: {
+        // L'API n'est jamais mise en cache — filtré aussi dans sw.ts.
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       },
     }),
   ],

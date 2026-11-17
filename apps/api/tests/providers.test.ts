@@ -103,6 +103,30 @@ describe('Repositories sur le mode démo', () => {
     expect(reread.exercices[0]!.sets).toHaveLength(2);
   });
 
+  it('SessionRepository persiste le RPE et lit null sans la colonne', async () => {
+    const repo = new SessionRepository(makeProvider(), TZ);
+    const s = await repo.finish({
+      programmeId: 'prog_fullbody',
+      programmeNom: 'Full body',
+      debut: '2026-11-02T18:00:00+01:00',
+      fin: '2026-11-02T19:00:00+01:00',
+      statut: 'terminee',
+      exercices: [
+        {
+          exercice: 'Développé Couché Smith Machine',
+          ordre: 1,
+          passee: false,
+          sets: [{ serie: 1, chargeKg: 60, repetitions: 10, terminee: true, rpe: 8, notes: null }],
+        },
+      ],
+    });
+    const reread = await repo.get(s.id);
+    expect(reread.exercices[0]!.sets[0]!.rpe).toBe(8);
+    // Les séances seedées n'ont pas de colonne RPE → null (compat arrière).
+    const old = (await repo.list()).find((x) => x.id !== s.id)!;
+    expect(old.exercices[0]!.sets.every((x) => x.rpe == null)).toBe(true);
+  });
+
   it('ProgramRepository liste le programme Full body importé (11 exos)', async () => {
     const repo = new ProgramRepository(makeProvider());
     const progs = await repo.list();
@@ -121,6 +145,19 @@ describe('Repositories sur le mode démo', () => {
     const after = await repo.get(prog!.id);
     expect(after.exercices[0]!.exercice).toBe('Matrix - Mollet sur leg press horizontal');
     expect(after.exercices).toHaveLength(11);
+  });
+
+  it('ProgramRepository persiste lienSuivant (superset) et lit null sans la colonne', async () => {
+    const repo = new ProgramRepository(makeProvider());
+    const [prog] = await repo.list();
+    // Les lignes seedées n'ont pas de colonne lien → falsy (compat arrière).
+    expect(prog!.exercices.every((e) => !e.lienSuivant)).toBe(true);
+    await repo.update(prog!.id, {
+      exercices: prog!.exercices.map((e, i) => ({ ...e, lienSuivant: i === 0 })),
+    });
+    const after = await repo.get(prog!.id);
+    expect(after.exercices[0]!.lienSuivant).toBe(true);
+    expect(after.exercices[1]!.lienSuivant).toBeFalsy();
   });
 
   it('SettingsRepository lit et met à jour les paramètres', async () => {

@@ -15,7 +15,7 @@ import { toNumber, toText } from './cells.js';
 //   Seances       : id | date | programme_id | programme_nom | debut |
 //                   fin | duree_sec | statut | notes
 //   SeanceSeries  : seance_id | exercice | ordre_exercice | serie |
-//                   charge_kg | repetitions | terminee | notes
+//                   charge_kg | repetitions | terminee | notes | rpe
 // Append-only : les lignes ne sont jamais réécrites ni supprimées.
 // ------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ export class SessionRepository {
     await this.ensureTabs();
     const [headers, sets] = await Promise.all([
       this.provider.getRange(SHEET_SEANCES, 'A2:I1000'),
-      this.provider.getRange(SHEET_SEANCE_SERIES, 'A2:H5000'),
+      this.provider.getRange(SHEET_SEANCE_SERIES, 'A2:I5000'),
     ]);
     const setsBySession = new Map<string, SessionExercise[]>();
     for (const row of sets) {
@@ -56,6 +56,7 @@ export class SessionRepository {
         repetitions: toNumber(row[5]),
         terminee: toText(row[6]) === 'true' || toText(row[6]) === '1',
         notes: toText(row[7]),
+        rpe: toNumber(row[8]),
       };
       if (!setsBySession.has(sid)) setsBySession.set(sid, []);
       const list = setsBySession.get(sid)!;
@@ -108,14 +109,14 @@ export class SessionRepository {
     const found = keptHeads.length !== headers.length;
     if (!found) throw new AppError(404, ERR.NOT_FOUND, `Séance introuvable : ${id}`);
 
-    const sets = await this.provider.getRange(SHEET_SEANCE_SERIES, 'A2:H5000');
+    const sets = await this.provider.getRange(SHEET_SEANCE_SERIES, 'A2:I5000');
     const keptSets = sets.filter((r) => toText(r[0]) !== id);
 
     const blankHeads = Array.from({ length: headers.length - keptHeads.length }, () =>
       Array<null>(9).fill(null),
     );
     const blankSets = Array.from({ length: sets.length - keptSets.length }, () =>
-      Array<null>(8).fill(null),
+      Array<null>(9).fill(null),
     );
     if (keptHeads.length + blankHeads.length) {
       await this.provider.updateRange(SHEET_SEANCES, `A2:I${headers.length + 1}`, [
@@ -124,7 +125,7 @@ export class SessionRepository {
       ]);
     }
     if (keptSets.length + blankSets.length) {
-      await this.provider.updateRange(SHEET_SEANCE_SERIES, `A2:H${sets.length + 1}`, [
+      await this.provider.updateRange(SHEET_SEANCE_SERIES, `A2:I${sets.length + 1}`, [
         ...keptSets,
         ...blankSets,
       ]);
@@ -181,6 +182,7 @@ export class SessionRepository {
         s.repetitions ?? null,
         s.terminee ? 'true' : 'false',
         s.notes ?? null,
+        s.rpe ?? null,
       ]),
     );
     if (rows.length) await this.provider.appendRows(SHEET_SEANCE_SERIES, rows);

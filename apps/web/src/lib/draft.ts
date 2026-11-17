@@ -14,7 +14,7 @@ export interface SessionDraft {
   debut: string; // ISO — conservé pour l'enregistrement
   exercices: SessionExercise[];
   notes: string | null;
-  /** Index de l'exercice affiché. */
+  /** Position dans la séquence d'étapes (séries entrelacées en superset). */
   index: number;
 }
 

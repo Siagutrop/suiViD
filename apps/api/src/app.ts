@@ -1,8 +1,9 @@
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
-import { createReadStream, existsSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { createReadStream, existsSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import {
   finishSessionSchema,
@@ -16,6 +17,8 @@ import {
   persoExerciseSchema,
   programSchema,
   provisionSchema,
+  pushSubSchema,
+  pushUnsubSchema,
   signupSchema,
   updateJournalSchema,
   userSettingsSchema,
@@ -27,12 +30,15 @@ import {
   type ApiMeta,
   type LinkSheetResult,
   type PasskeyInfo,
+  type PushStatus,
   type UserSettings,
   todayInTimezone,
 } from '@suivi/shared';
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { AuthService } from './auth.js';
 import { WebAuthnService } from './webauthn.js';
+import { PushService } from './push.js';
+import { startReminders } from './reminders.js';
 import type { Env } from './env.js';
 import { AppError, ERR, toApiError } from './errors.js';
 import { MockProvider } from './providers/MockProvider.js';
@@ -59,6 +65,17 @@ import { RendezVousStore } from './rendezvous.js';
 import { autoBackup } from './backup.js';
 import { searchOpenFoodFacts } from './off.js';
 import { registerAdminRoutes } from './admin.js';
+
+// Version lue dans le package.json de l'API (src et dist sont tous deux
+// à un niveau du package — ../package.json marche dans les deux cas).
+const API_VERSION = (() => {
+  try {
+    const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../package.json');
+    return (JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version?: string }).version ?? 'dev';
+  } catch {
+    return 'dev';
+  }
+})();
 
 // ------------------------------------------------------------------
 // Multi-utilisateur : chaque requête est résolue vers le contexte de
@@ -99,6 +116,8 @@ export interface AppContext {
   auth: AuthService;
   /** Service WebAuthn / passkeys (config + challenges éphémères). */
   webauthn: WebAuthnService;
+  /** Service Web Push (inactif sans clés VAPID). */
+  push: PushService;
   /** Contexte partagé du mode démo (un seul provider fictif). */
   mockCtx: DataCtx | null;
   /** Cache des contextes par spreadsheetId (mode sheets). */
@@ -174,6 +193,7 @@ export function buildContext(env: Env, provider?: DataProvider): AppContext {
     users,
     auth: new AuthService(env, users),
     webauthn: new WebAuthnService(env),
+    push: new PushService(env, users),
     mockCtx,
     cache,
     db,
@@ -270,7 +290,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     }
     return {
       mode: ctx.env.DATA_MODE,
-      version: '0.2.0',
+      version: API_VERSION,
       spreadsheetId: maskId(user.spreadsheetId),
       tabs,
     };
@@ -370,6 +390,38 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     if (!(await ctx.users.removePasskey(req.userId!, id))) {
       throw new AppError(404, ERR.NOT_FOUND, 'Empreinte introuvable');
     }
+    return { ok: true };
+  });
+
+  // ---------- Notifications push (rappels de séance) ----------
+  app.get('/api/me/push', async (req): Promise<PushStatus> => {
+    const user = ctx.users.byId(req.userId!);
+    if (!user) throw new AppError(401, ERR.UNAUTHORIZED, 'Compte introuvable');
+    return {
+      enabled: ctx.push.enabled,
+      publicKey: ctx.push.publicKey,
+      subscribed: (user.pushSubs ?? []).length > 0,
+      hour: ctx.push.hour,
+    };
+  });
+
+  app.post('/api/me/push', async (req) => {
+    if (!ctx.push.enabled) {
+      throw new AppError(503, 'UNAVAILABLE', 'Notifications non configurées sur ce serveur');
+    }
+    const sub = parse(pushSubSchema, req.body);
+    await ctx.users.addPushSub(req.userId!, {
+      endpoint: sub.endpoint,
+      keys: sub.keys,
+      createdAt: new Date().toISOString(),
+      lastReminderDate: null,
+    });
+    return { ok: true };
+  });
+
+  app.delete('/api/me/push', async (req) => {
+    const { endpoint } = parse(pushUnsubSchema, req.body);
+    await ctx.users.removePushSub(req.userId!, endpoint);
     return { ok: true };
   });
 
@@ -845,6 +897,9 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       void reply.sendFile('index.html');
     });
   }
+
+  // Rappels de séance : boucle lancée seulement si VAPID configuré.
+  if (ctx.push.enabled) startReminders(ctx, app.log);
 
   return app;
 }

@@ -19,10 +19,12 @@ import type {
   UserSettings,
   Photo,
   PasskeyInfo,
+  PushStatus,
   RendezVous,
 } from '@suivi/shared';
 import { addDays, todayInTimezone } from '@suivi/shared';
 import { api } from '@/lib/api';
+import { subscribeDevice, unsubscribeDevice } from '@/lib/push';
 
 // ------------------------------------------------------------------
 // Hooks TanStack Query — couche d'accès unique côté UI.
@@ -42,6 +44,7 @@ export const keys = {
   parametres: ['parametres'] as const,
   photos: ['photos'] as const,
   passkeys: ['me', 'passkeys'] as const,
+  push: ['me', 'push'] as const,
 };
 
 export function useMeta() {
@@ -55,6 +58,11 @@ export function useMe() {
 /** Passkeys (empreintes) enregistrées sur le compte connecté. */
 export function usePasskeys() {
   return useQuery({ queryKey: keys.passkeys, queryFn: () => api.get<PasskeyInfo[]>('/me/passkeys'), staleTime: 60_000 });
+}
+
+/** État des rappels push (VAPID serveur + souscription de l'appareil). */
+export function usePushStatus() {
+  return useQuery({ queryKey: keys.push, queryFn: () => api.get<PushStatus>('/me/push'), staleTime: 60_000 });
 }
 
 export function useToday() {
@@ -767,5 +775,29 @@ export function useSupprimerRdv() {
   return useMutation({
     mutationFn: (id: string) => api.delete<{ ok: boolean }>(`/rendez-vous/${id}`),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['rendez-vous'] }),
+  });
+}
+
+// ---------- Notifications push (rappels de séance) ----------
+
+export function useSubscribePush() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (publicKey: string) => {
+      const sub = await subscribeDevice(publicKey);
+      await api.post<{ ok: boolean }>('/me/push', sub);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.push }),
+  });
+}
+
+export function useUnsubscribePush() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const endpoint = await unsubscribeDevice();
+      if (endpoint) await api.delete<{ ok: boolean }>('/me/push', { endpoint });
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.push }),
   });
 }

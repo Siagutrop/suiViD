@@ -39,6 +39,8 @@ export interface ProgramExercise {
   notes: string | null;
   /** Repos entre séries en secondes — null = reposDefautSec des paramètres. */
   reposSec: number | null;
+  /** true = enchaîné avec l'exercice suivant (superset/circuit). */
+  lienSuivant?: boolean;
 }
 
 export interface Program {
@@ -55,6 +57,8 @@ export interface SessionSet {
   chargeKg: number | null;
   repetitions: number | null;
   terminee: boolean;
+  /** Difficulté ressentie 1-10 (optionnel). */
+  rpe?: number | null;
   notes: string | null;
 }
 
@@ -62,6 +66,8 @@ export interface SessionExercise {
   exercice: string;
   ordre: number;
   passee: boolean;
+  /** Identifiant de bloc superset — les exercices d'un même bloc alternent leurs séries. */
+  bloc?: number | null;
   sets: SessionSet[];
 }
 
@@ -152,6 +158,27 @@ export interface PasskeyInfo {
   id: string;
   createdAt: string;
   transports: string[];
+}
+
+/** Souscription Web Push d'un appareil (stockée dans users.json). */
+export interface PushSubRecord {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  createdAt: string; // ISO
+  /** Date AAAA-MM-JJ du dernier rappel envoyé — anti-doublon. */
+  lastReminderDate?: string | null;
+}
+
+/** État des rappels push pour l'utilisateur courant (GET /api/me/push). */
+export interface PushStatus {
+  /** VAPID configuré côté serveur — sinon la fonctionnalité est inactive. */
+  enabled: boolean;
+  /** Clé publique VAPID pour pushManager.subscribe ; null si désactivé. */
+  publicKey: string | null;
+  /** Au moins un appareil souscrit pour ce compte. */
+  subscribed: boolean;
+  /** Heure locale d'envoi du rappel (0-23). */
+  hour: number;
 }
 
 /** Résultat de POST /api/me/spreadsheet. */

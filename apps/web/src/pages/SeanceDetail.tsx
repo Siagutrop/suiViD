@@ -74,6 +74,7 @@ export function SeanceDetailPage() {
                       )}
                     >
                       {formatKg(set.chargeKg)} × {set.repetitions ?? '—'}
+                      {set.rpe != null && <span className="opacity-70"> · RPE {set.rpe}</span>}
                     </span>
                   ))}
                 </div>

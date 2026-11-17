@@ -42,6 +42,7 @@ export const programExerciseSchema = z.object({
   variante: z.string().max(500).nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
   reposSec: z.number().int().min(0).max(3600).nullable().optional(),
+  lienSuivant: z.boolean().optional(),
 });
 
 /** Exercice personnel (onglet ExosPerso) — création / édition. */
@@ -64,6 +65,7 @@ export const sessionSetSchema = z.object({
   chargeKg: z.number().min(0).max(1000).nullable(),
   repetitions: z.number().int().min(0).max(500).nullable(),
   terminee: z.boolean(),
+  rpe: z.number().int().min(1).max(10).nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
 });
 
@@ -71,6 +73,7 @@ export const sessionExerciseSchema = z.object({
   exercice: z.string().min(1).max(200),
   ordre: z.number().int().min(0),
   passee: z.boolean(),
+  bloc: z.number().int().min(0).nullable().optional(),
   sets: z.array(sessionSetSchema).max(30),
 });
 
@@ -147,4 +150,19 @@ export const linkSheetSchema = z.object({
 
 export const provisionSchema = z.object({
   confirm: z.literal(true),
+});
+
+// ---------- Notifications push ----------
+
+/** Souscription Push API telle que renvoyée par PushSubscription.toJSON(). */
+export const pushSubSchema = z.object({
+  endpoint: z.string().url().max(2000),
+  keys: z.object({
+    p256dh: z.string().min(1).max(500),
+    auth: z.string().min(1).max(500),
+  }),
+});
+
+export const pushUnsubSchema = z.object({
+  endpoint: z.string().url().max(2000),
 });

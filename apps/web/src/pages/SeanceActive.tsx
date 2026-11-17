@@ -105,7 +105,10 @@ function StartScreen({ programme, onStart }: { programme?: import('@suivi/shared
                   programmeId: programme.id,
                   programmeNom: programme.nom,
                   debut: new Date().toISOString(),
-                  exercices: programme.exercices.map((e, i) => programToSession(e, i)),
+                  exercices: programme.exercices.map((e, i) => ({
+                    ...programToSession(e, i),
+                    bloc: blocIds(programme.exercices)[i] ?? null,
+                  })),
                   notes: null,
                   index: 0,
                 })
@@ -129,6 +132,48 @@ function StartScreen({ programme, onStart }: { programme?: import('@suivi/shared
   );
 }
 
+/**
+ * Blocs superset : un exercice « lienSuivant » forme un bloc avec tous
+ * les exercices consécutifs chaînés. null = exercice isolé.
+ */
+function blocIds(exercices: ProgramExercise[]): (number | null)[] {
+  let cur = 0;
+  return exercices.map((e, i) => {
+    const selfLinked = !!e.lienSuivant && i < exercices.length - 1;
+    const prevLinked = i > 0 && !!exercices[i - 1]!.lienSuivant;
+    if (!prevLinked && selfLinked) cur++;
+    return selfLinked || prevLinked ? cur : null;
+  });
+}
+
+/** Étapes du runner : séries séquentielles, entrelacées à l'intérieur d'un bloc (A1,B1,A2,B2…). */
+interface Step {
+  ex: number;
+  set: number;
+}
+function buildSteps(exercices: SessionExercise[]): Step[] {
+  const steps: Step[] = [];
+  let i = 0;
+  while (i < exercices.length) {
+    const bloc = exercices[i]!.bloc;
+    if (bloc == null) {
+      exercices[i]!.sets.forEach((_, s) => steps.push({ ex: i, set: s }));
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j + 1 < exercices.length && exercices[j + 1]!.bloc === bloc) j++;
+    const max = Math.max(...exercices.slice(i, j + 1).map((e) => e.sets.length));
+    for (let s = 0; s < max; s++) {
+      for (let e = i; e <= j; e++) {
+        if (exercices[e]!.sets[s]) steps.push({ ex: e, set: s });
+      }
+    }
+    i = j + 1;
+  }
+  return steps;
+}
+
 function programToSession(e: ProgramExercise, i: number): SessionExercise {
   return {
     exercice: e.exercice,
@@ -139,6 +184,7 @@ function programToSession(e: ProgramExercise, i: number): SessionExercise {
       chargeKg: null,
       repetitions: null,
       terminee: false,
+      rpe: null,
       notes: null,
     })),
   };
@@ -187,7 +233,11 @@ function SessionRunner({
     onUpdate(next);
   };
 
-  const idx = Math.min(draft.index, draft.exercices.length - 1);
+  // Séquence d'étapes : séries entrelacées à l'intérieur d'un bloc superset.
+  const steps = useMemo(() => buildSteps(draft.exercices), [draft.exercices]);
+  const step = Math.min(draft.index, steps.length - 1);
+  const cur = steps[step]!;
+  const idx = cur.ex;
   const ex = draft.exercices[idx]!;
   const exInfo = exercices?.find((e) => e.nom === ex.exercice);
   const progExo = useProgramme(draft.programmeId ?? '');
@@ -209,8 +259,11 @@ function SessionRunner({
 
   const validateSet = (setIdx: number) => {
     setSet(setIdx, { terminee: true });
-    // Lance le minuteur de récupération après validation
-    setRest(progInfo?.reposSec ?? settings?.reposDefautSec ?? 90);
+    // En superset, on enchaîne direct sur l'autre exo du bloc — pas de repos.
+    const nxt = steps[step + 1];
+    const chaine =
+      nxt != null && nxt.ex !== idx && draft.exercices[nxt.ex]?.bloc != null && draft.exercices[nxt.ex]?.bloc === ex.bloc;
+    if (!chaine) setRest(progInfo?.reposSec ?? settings?.reposDefautSec ?? 90);
   };
 
   const addSet = () =>
@@ -218,19 +271,36 @@ function SessionRunner({
       ...d,
       exercices: d.exercices.map((e, i) =>
         i === idx
-          ? { ...e, sets: [...e.sets, { serie: e.sets.length + 1, chargeKg: null, repetitions: null, terminee: false, notes: null }] }
+          ? { ...e, sets: [...e.sets, { serie: e.sets.length + 1, chargeKg: null, repetitions: null, terminee: false, rpe: null, notes: null }] }
           : e,
       ),
     }));
 
-  const goTo = (i: number) => update((d) => ({ ...d, index: Math.max(0, Math.min(i, d.exercices.length - 1)) }));
+  const goToStep = (k: number) =>
+    update((d) => ({ ...d, index: Math.max(0, Math.min(k, steps.length - 1)) }));
+  // Navigation par exercice : étape la plus proche avant/après appartenant
+  // à un autre exercice (dans un bloc superset, ça alterne A→B→A…).
+  const nextStep = steps.findIndex((s, k) => k > step && s.ex !== idx);
+  let prevStep = -1;
+  for (let k = step - 1; k >= 0; k--) {
+    if (steps[k]!.ex !== idx) {
+      prevStep = k;
+      break;
+    }
+  }
+  // Barre de progression → premier pas non validé de l'exercice visé.
+  const goTo = (i: number) => {
+    const pending = steps.findIndex((s) => s.ex === i && !draft.exercices[i]!.sets[s.set]?.terminee);
+    const target = pending >= 0 ? pending : steps.findIndex((s) => s.ex === i);
+    if (target >= 0) goToStep(target);
+  };
   const skip = () => {
     update((d) => ({
       ...d,
       exercices: d.exercices.map((e, i) => (i === idx ? { ...e, passee: true } : e)),
-      index: Math.min(idx + 1, d.exercices.length - 1),
+      index: nextStep >= 0 ? nextStep : d.index,
     }));
-    if (idx === draft.exercices.length - 1) setFinishOpen(true);
+    if (nextStep < 0) setFinishOpen(true);
   };
 
   const doFinish = async (statut: 'terminee' | 'abandonnee', markJournal: boolean) => {
@@ -321,6 +391,7 @@ function SessionRunner({
                 </p>
                 <h2 className="mt-0.5 text-xl font-extrabold leading-tight">{ex.exercice}</h2>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  {ex.bloc != null && <Badge tone="accent">Superset</Badge>}
                   {exInfo && <Badge tone="violet">{exInfo.muscle}</Badge>}
                   {progInfo?.repsCible && <Badge>Cible {progInfo.repsCible}</Badge>}
                   {(progInfo?.reposSec ?? settings?.reposDefautSec) != null && (
@@ -425,15 +496,15 @@ function SessionRunner({
       {/* Barre d'action basse */}
       <footer className="sticky bottom-0 z-30 border-t border-line bg-bg/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-          <Button variant="secondary" size="icon" onClick={() => goTo(idx - 1)} disabled={idx === 0} aria-label="Précédent">
+          <Button variant="secondary" size="icon" onClick={() => goToStep(prevStep)} disabled={prevStep < 0} aria-label="Précédent">
             <ChevronLeft className="size-5" />
           </Button>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" className="flex-1 text-ink-2" onClick={skip}>
               <SkipForward className="size-4" /> Passer
             </Button>
-            {idx < draft.exercices.length - 1 ? (
-              <Button className="flex-1" onClick={() => goTo(idx + 1)}>
+            {nextStep >= 0 ? (
+              <Button className="flex-1" onClick={() => goToStep(nextStep)}>
                 Suivant <ArrowRight className="size-4" />
               </Button>
             ) : (
@@ -529,6 +600,28 @@ function SetRow({
           disabled={set.terminee}
           onChange={(e) => onPatch({ repetitions: e.target.value === '' ? null : Math.max(0, Math.round(Number(e.target.value))) })}
           placeholder="0"
+          className={numInput}
+        />
+      </div>
+      <div className="w-16 shrink-0">
+        <label className="mb-0.5 block text-center text-[10px] font-bold uppercase tracking-wider text-ink-2">
+          RPE
+        </label>
+        <input
+          type="number"
+          inputMode="numeric"
+          step="1"
+          min="1"
+          max="10"
+          value={set.rpe ?? ''}
+          disabled={set.terminee}
+          onChange={(e) =>
+            onPatch({
+              rpe: e.target.value === '' ? null : Math.min(10, Math.max(1, Math.round(Number(e.target.value)))),
+            })
+          }
+          placeholder="—"
+          title="Difficulté ressentie (1-10), optionnel"
           className={numInput}
         />
       </div>

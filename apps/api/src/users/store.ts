@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Env } from '../env.js';
 import { AppError, ERR } from '../errors.js';
-import type { PasskeyRecord } from '@suivi/shared';
+import type { PasskeyRecord, PushSubRecord } from '@suivi/shared';
 
 // ------------------------------------------------------------------
 // Stockage des comptes utilisateurs — fichier JSON local.
@@ -24,6 +24,8 @@ export interface UserRecord {
   disabled?: boolean;
   /** Passkeys WebAuthn enregistrées (empreinte / PIN appareil). */
   passkeys?: PasskeyRecord[];
+  /** Souscriptions Web Push des appareils (rappels de séance). */
+  pushSubs?: PushSubRecord[];
   createdAt: string;
 }
 
@@ -187,6 +189,38 @@ export class UserStore {
     u.passkeys = next;
     await this.save();
     return true;
+  }
+
+  /** Enregistre (ou rafraîchit par endpoint) une souscription push. */
+  async addPushSub(userId: string, rec: PushSubRecord): Promise<UserRecord> {
+    const u = this.users.get(userId);
+    if (!u) throw new AppError(404, ERR.NOT_FOUND, 'Utilisateur introuvable');
+    const list = (u.pushSubs ?? []).filter((s) => s.endpoint !== rec.endpoint);
+    list.push(rec);
+    u.pushSubs = list;
+    await this.save();
+    return u;
+  }
+
+  /** Retire une souscription par endpoint. Retourne true si elle existait. */
+  async removePushSub(userId: string, endpoint: string): Promise<boolean> {
+    const u = this.users.get(userId);
+    if (!u) return false;
+    const list = u.pushSubs ?? [];
+    const next = list.filter((s) => s.endpoint !== endpoint);
+    if (next.length === list.length) return false;
+    u.pushSubs = next;
+    await this.save();
+    return true;
+  }
+
+  /** Marque la date du dernier rappel envoyé à une souscription. */
+  async markReminderSent(userId: string, endpoint: string, date: string): Promise<void> {
+    const u = this.users.get(userId);
+    const sub = u?.pushSubs?.find((s) => s.endpoint === endpoint);
+    if (!sub) return;
+    sub.lastReminderDate = date;
+    await this.save();
   }
 
   async persist(): Promise<void> {

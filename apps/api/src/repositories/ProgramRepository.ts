@@ -14,7 +14,8 @@ import { isEmptyCell, toNumber, toText } from './cells.js';
 // Onglets normalisés (créés par le provisionnement explicite) :
 //   Programmes          : id | nom | statut | cree_le | note
 //   ProgrammeExercices  : programme_id | ordre | exercice | series |
-//                         repetitions_cible | variante | notes | repos_sec
+//                         repetitions_cible | variante | notes | repos_sec |
+//                         lien_suivant ('true' = superset avec l'exo suivant)
 // L'onglet « Full body » n'est jamais modifié : il sert de modèle de
 // départ et est importé dans ProgrammeExercices au provisionnement.
 // ------------------------------------------------------------------
@@ -41,7 +42,7 @@ export class ProgramRepository {
     await this.ensureTabs();
     const [progs, exos] = await Promise.all([
       this.provider.getRange(SHEET_PROGRAMMES, 'A2:E500'),
-      this.provider.getRange(SHEET_PROGRAMME_EXERCICES, 'A2:H1000'),
+      this.provider.getRange(SHEET_PROGRAMME_EXERCICES, 'A2:I1000'),
     ]);
     const byProgram = new Map<string, { ordre: number; ex: ProgramExercise }[]>();
     for (const row of exos) {
@@ -54,6 +55,7 @@ export class ProgramRepository {
         variante: toText(row[5]),
         notes: toText(row[6]),
         reposSec: toNumber(row[7]),
+        lienSuivant: toText(row[8]) === 'true',
       };
       if (!byProgram.has(pid)) byProgram.set(pid, []);
       byProgram.get(pid)!.push({ ordre: toNumber(row[1]) ?? 0, ex });
@@ -102,6 +104,7 @@ export class ProgramRepository {
           e.variante ?? null,
           e.notes ?? null,
           e.reposSec ?? null,
+          e.lienSuivant ? 'true' : null,
         ]),
       );
     }
@@ -167,15 +170,16 @@ export class ProgramRepository {
             e.variante ?? null,
             e.notes ?? null,
             e.reposSec ?? null,
+            e.lienSuivant ? 'true' : null,
           ]);
         });
       }
-      const current = await this.provider.getRange(SHEET_PROGRAMME_EXERCICES, 'A2:H1000');
+      const current = await this.provider.getRange(SHEET_PROGRAMME_EXERCICES, 'A2:I1000');
       const blankRows = Math.max(0, current.length - rows.length);
-      const padded = [...rows, ...Array.from({ length: blankRows }, () => Array(8).fill(null))];
+      const padded = [...rows, ...Array.from({ length: blankRows }, () => Array(9).fill(null))];
       await this.provider.updateRange(
         SHEET_PROGRAMME_EXERCICES,
-        `A2:H${1 + padded.length}`,
+        `A2:I${1 + padded.length}`,
         padded,
       );
     }

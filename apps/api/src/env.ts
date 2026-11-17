@@ -30,6 +30,13 @@ const envSchema = z.object({
   WEBAUTHN_RP_ID: z.string().optional(),
   /** Nom affiché dans la boîte de dialogue biométrique de l'OS. */
   WEBAUTHN_RP_NAME: z.string().default('SuiViD'),
+  /** Web Push : paire de clés VAPID (`npx web-push generate-vapid-keys`). */
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  /** Contact VAPID (mailto: ou URL) exigé par les services push. */
+  VAPID_SUBJECT: z.string().default('mailto:contact@suivid.app'),
+  /** Heure locale (Europe/Paris) d'envoi du rappel de séance (0-23). */
+  PUSH_REMINDER_HOUR: z.coerce.number().int().min(0).max(23).default(18),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   /** Dossier du build web à servir en statique (déploiement tout-en-un). */
   WEB_DIST: z.string().optional(),

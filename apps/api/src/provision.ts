@@ -28,9 +28,9 @@ const HEADERS: Record<string, string[]> = {
   ],
   Liste: ['Nom', 'Muscle', 'Lien vidéo'],
   Programmes: ['id', 'nom', 'statut', 'cree_le', 'note'],
-  ProgrammeExercices: ['programme_id', 'ordre', 'exercice', 'series', 'repetitions_cible', 'variante', 'notes', 'repos_sec'],
+  ProgrammeExercices: ['programme_id', 'ordre', 'exercice', 'series', 'repetitions_cible', 'variante', 'notes', 'repos_sec', 'lien_suivant'],
   Seances: ['id', 'date', 'programme_id', 'programme_nom', 'debut', 'fin', 'duree_sec', 'statut', 'notes'],
-  SeanceSeries: ['seance_id', 'exercice', 'ordre_exercice', 'serie', 'charge_kg', 'repetitions', 'terminee', 'notes'],
+  SeanceSeries: ['seance_id', 'exercice', 'ordre_exercice', 'serie', 'charge_kg', 'repetitions', 'terminee', 'notes', 'rpe'],
   Parametres: ['cle', 'valeur'],
 };
 

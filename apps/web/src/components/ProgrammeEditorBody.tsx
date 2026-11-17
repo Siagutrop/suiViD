@@ -10,9 +10,11 @@ import {
   Check,
   ChevronRight,
   GripVertical,
+  Link2,
   Plus,
   Search,
   Trash2,
+  Unlink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Exercise, ProgramExercise } from '@suivi/shared';
@@ -145,6 +147,29 @@ export function ProgrammeEditorBody({
                 />
               </div>
             </Card>
+            {/* Lien superset avec l'exercice suivant */}
+            {i < list.length - 1 && (
+              <div className="mt-1.5 flex justify-center">
+                <button
+                  onClick={() => patch(i, { lienSuivant: !e.lienSuivant })}
+                  aria-pressed={!!e.lienSuivant}
+                  aria-label={
+                    e.lienSuivant
+                      ? `Délier « ${e.exercice} » du suivant`
+                      : `Enchaîner « ${e.exercice} » avec le suivant (superset)`
+                  }
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                    e.lienSuivant
+                      ? 'bg-violet/20 text-violet'
+                      : 'text-ink-2/40 hover:bg-line/40 hover:text-ink-2',
+                  )}
+                >
+                  {e.lienSuivant ? <Link2 className="size-3" /> : <Unlink className="size-3" />}
+                  {e.lienSuivant ? 'superset' : 'lier'}
+                </button>
+              </div>
+            )}
           </motion.div>
         ))}
       </div>

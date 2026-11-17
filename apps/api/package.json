@@ -23,11 +23,13 @@
     "googleapis": "^144.0.0",
     "jose": "^5.9.6",
     "pino-pretty": "^11.3.0",
+    "web-push": "^3.6.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.9.0",
+    "@types/web-push": "^3.6.4",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.2",
     "typescript": "~5.6.3",
